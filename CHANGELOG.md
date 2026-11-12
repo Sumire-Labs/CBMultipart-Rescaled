@@ -2,35 +2,59 @@
 
 ## 3.1.0 - 2026-11-12
 
-- Port GTNH fixes for callbacks after tile replacement, detached part updates,
-  empty-tile lighting, and stale client-side block conversion. Apply the tile
-  ownership check to tick dispatch as well.
-- Publish material registry changes as a complete snapshot and skip redundant
-  material synchronization in integrated singleplayer.
-- Add a missing-material placeholder that preserves the original material name
-  through NBT and item drops; exclude it from cutting and crafting recipes.
-- Release the render state's world reference after multipart rendering.
-- Add optional Demonica material-ID scopes for microblock terrain quads, including
-  nested render and exception cleanup. No shader mod is required to run the mod.
-- Add server and production-client regression tests, including Celeritas and
-  Demonica scene rendering. Existing logic-tick/render separation is unchanged.
+### Added
+
+- Add optional Demonica support so terrain shaders can identify each microblock's original
+  block material.
+
+### Fixed
+
+- Stop old tiles from updating parts that have moved to another tile, including
+  tick updates.
+- Fix a null-pointer crash when a detached part sends a description update.
+- Return zero light for an empty multipart block.
+- Fix extra block conversions when a client receives a part update while it still
+  has an outdated block at that position.
+- Stop the singleplayer client from rebuilding the server's shared material list
+  during login. Apply material-list changes only after the full list is valid.
+- Show a missing texture for unavailable microblock materials. Keep their original
+  names in NBT and item drops, and prevent crafting with the placeholder.
+- Clear the world reference after drawing multipart blocks.
+- Restore the previous shader material after each microblock draw, including
+  nested draws and drawing errors.
+
+These fixes include changes from GTNH's ForgeMultipart fork.
+
+### Development
+
+- Add server regression tests and client rendering checks with Celeritas and
+  Demonica. Logic ticks and rendering remain separate.
 
 ## 3.0.1 - 2026-11-12
 
-- Initial distribution of the changes subsequently included in 3.1.0.
+The mod changes are the same as [3.1.0](https://github.com/Sumire-Labs/CBMultipart-Rescaled/releases/tag/3.1.0).
 
 ## 3.0.0 - 2026-11-12
 
-- Move the 1.12.2 branch to CleanroomDevEnv, Java 25 and Scala 3.9.0.
-- Preserve the existing packages, mod IDs and multipart save format. Dependent
-  Scala mods must be rebuilt against the Scala 3 API.
-- Incorporate kappa-maintainer's Cleanroom port and particle effects.
-- Read TASTy class headers without resolving method bodies, supporting both MCP
-  development and SRG distributions on dedicated servers.
-- Update to CCL CRE 3.3.10, ChickenASM 4.0.1 and HEI 4.35.0; pin their versions.
-- Fix control-state player retention, pressed-button conversion and generated
-  Java passthrough stack-map frames.
-- Add Sumire Labs to all three mod containers' author lists.
-- Add build, integration-test, GitHub Release, Maven, Modrinth and CurseForge
-  workflows. Remote Maven, Modrinth and CurseForge publication are disabled
-  until their destinations and credentials are configured.
+### Changed
+
+- Port Minecraft 1.12.2 Multipart to Cleanroom with Java 25 and Scala 3.9.0,
+  using CleanroomDevEnv and kappa-maintainer's port. Include its particle effects.
+- Keep the existing package names, mod IDs and world save format. Scala mods that
+  depend on Multipart need rebuilding against the Scala 3 API.
+- Use CCL CRE 3.3.10, ChickenASM 4.0.1 and HEI 4.35.0. Dependency versions are pinned.
+- Add Sumire Labs to the author lists of all three mod containers.
+
+### Fixed
+
+- Fix player references retained by the control-key handler.
+- Fix buttons staying pressed after conversion to multipart blocks.
+- Fix generated Java passthrough classes failing bytecode verification.
+
+### Development
+
+- Read only TASTy class headers, without resolving method bodies. This works in
+  MCP development and SRG releases, including dedicated servers.
+- Add build and integration-test workflows, GitHub Releases, and publishing to
+  Maven, Modrinth and CurseForge. Remote uploads are disabled by default; enable
+  them after setting the destination and credentials.
