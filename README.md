@@ -81,6 +81,10 @@ Remote publication is disabled by default. Set `publish_to_maven=true`, check
 `maven_url` in `gradle.properties`, and configure `MAVEN_USERNAME` and
 `MAVEN_PASSWORD` as GitHub Actions secrets to enable it.
 
+To publish an existing tag to Maven only, run the **Publish Maven** workflow and
+enter its tag (for example `3.0.0`). It enables Maven for that invocation, leaves
+CurseForge and Modrinth disabled, and does not alter the tag or GitHub Release.
+
 Modrinth and CurseForge remain disabled until `modrinth_project_id` and/or
 `curseforge_project_id` are populated. Set `MODRINTH_TOKEN` and `CURSEFORGE_TOKEN`
 for enabled destinations. Only the SRG jar is uploaded as the mod file. Required
