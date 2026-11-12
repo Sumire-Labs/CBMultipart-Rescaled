@@ -382,7 +382,13 @@ configure<ModPublishExtension> {
             minecraftVersions.add("1.12.2")
             client.set(true)
             server.set(true)
+            javaVersions.add(JavaVersion.VERSION_25)
             requires("codechicken-lib-cre", "scalar")
+            optional("had-enough-items")
+            optional("demonica-shaders")
+            incompatible("cb-multipart")
+            incompatible("codechicken-lib-1-8")
+            incompatible("scalar-legacy")
         }
     }
     if (modrinthProjectId.isNotBlank()) {
@@ -390,6 +396,11 @@ configure<ModPublishExtension> {
             projectId.set(modrinthProjectId)
             accessToken.set(providers.environmentVariable("MODRINTH_TOKEN"))
             minecraftVersions.add("1.12.2")
+            requires("codechicken-lib-cre")
+            // Scalar has no confirmed Modrinth project; README links its CurseForge download.
+            optional("had-enough-items")
+            incompatible("cb-multipart")
+            incompatible("codechicken-lib")
         }
     }
 }
