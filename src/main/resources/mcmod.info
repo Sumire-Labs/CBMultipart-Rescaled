@@ -2,6 +2,7 @@
 {
   "modid": "forgemultipartcbe",
   "name": "CBMultipart Rescaled",
+  "logoFile": @{MOD_LOGO_JSON},
   "description": "Open source library for facilitation of multiple functional parts in the one block space.",
   "version": "@{MOD_VERSION}",
   "mcversion": "1.12.2",
@@ -11,6 +12,7 @@
 {
   "modid": "minecraftmultipartcbe",
   "name": "Minecraft Multipart Plugin",
+  "logoFile": @{MOD_LOGO_JSON},
   "description": "Provides multipart versions of some vanilla blocks like torches and buttons.",
   "version": "@{MOD_VERSION}",
   "mcversion": "1.12.2",
@@ -20,6 +22,7 @@
 {
   "modid": "microblockcbe",
   "name": "Forge Microblocks",
+  "logoFile": @{MOD_LOGO_JSON},
   "description": "Microblocks for Forge MultipartCBE.",
   "version": "@{MOD_VERSION}",
   "mcversion": "1.12.2",
