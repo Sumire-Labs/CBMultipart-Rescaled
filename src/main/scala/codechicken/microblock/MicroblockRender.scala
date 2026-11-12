@@ -58,14 +58,15 @@ object MicroblockRender {
 
     def renderCuboid(pos: Vector3, ccrs: CCRenderState, mat: IMicroMaterial, layer: BlockRenderLayer, c: Cuboid6, faces: Int): Unit = {
         MicroMaterialRegistry.loadIcons()
-
-        val f = face
-        ccrs.setModel(f)
-        for (s <- 0 until 6 if (faces & 1 << s) == 0) {
-            f.loadCuboidFace(c, s)
-            val ops = mat.getMicroRenderOps(pos, s, layer, c)
-            for (opSet <- ops)
-                ccrs.render(opSet*)
+        DemonicaCompat.withMaterial(mat, layer != null) {
+            val f = face
+            ccrs.setModel(f)
+            for (s <- 0 until 6 if (faces & 1 << s) == 0) {
+                f.loadCuboidFace(c, s)
+                val ops = mat.getMicroRenderOps(pos, s, layer, c)
+                for (opSet <- ops)
+                    ccrs.render(opSet*)
+            }
         }
     }
 
