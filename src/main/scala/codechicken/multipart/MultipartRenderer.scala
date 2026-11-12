@@ -98,7 +98,8 @@ object MultipartRenderer extends TileEntitySpecialRenderer[TTESRRenderTile] with
                 ccrs.reset()
                 ccrs.bind(buffer)
                 ccrs.lightMatrix.locate(world, pos)
-                tile.renderStatic(Vector3.fromBlockPos(pos), MinecraftForgeClient.getRenderLayer, ccrs)
+                try tile.renderStatic(Vector3.fromBlockPos(pos), MinecraftForgeClient.getRenderLayer, ccrs)
+                finally ccrs.lightMatrix.access = null
         }
 
     override def handleRenderBlockDamage(world: IBlockAccess, pos: BlockPos, state: IBlockState, sprite: TextureAtlasSprite, buffer: BufferBuilder): Unit = {
