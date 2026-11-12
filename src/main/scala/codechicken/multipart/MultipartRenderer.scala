@@ -1,17 +1,15 @@
 package codechicken.multipart
 
-import java.util.{HashMap => JHashMap, Map => JMap}
-
-import codechicken.lib.reflect.{ObfMapping, ReflectionManager}
+import java.util.{HashMap as JHashMap, Map as JMap}
 import codechicken.lib.render.CCRenderState
 import codechicken.lib.render.block.{BlockRenderingRegistry, ICCBlockRenderer}
 import codechicken.lib.texture.TextureUtils
 import codechicken.lib.vec.Vector3
-import codechicken.multipart.BlockMultipart._
+import codechicken.multipart.BlockMultipart.*
 import codechicken.multipart.scalatraits.TTESRRenderTile
 import net.minecraft.block.state.IBlockState
 import net.minecraft.client.Minecraft
-import net.minecraft.client.renderer.block.model._
+import net.minecraft.client.renderer.block.model.*
 import net.minecraft.client.renderer.block.statemap.DefaultStateMapper
 import net.minecraft.client.renderer.texture.{TextureAtlasSprite, TextureMap}
 import net.minecraft.client.renderer.tileentity.{TileEntityRendererDispatcher, TileEntitySpecialRenderer}
@@ -23,29 +21,29 @@ import net.minecraftforge.client.MinecraftForgeClient
 import net.minecraftforge.fml.relauncher.{Side, SideOnly}
 import org.lwjgl.opengl.GL11
 
-import scala.collection.JavaConversions._
+import scala.compiletime.uninitialized
+import scala.jdk.CollectionConverters.*
 
 /**
  * Internal class for rendering callbacks. Should be moved to the handler package
  */
 @SideOnly(Side.CLIENT)
 object MultipartRenderer extends TileEntitySpecialRenderer[TTESRRenderTile] with ICCBlockRenderer {
-    val renderType = BlockRenderingRegistry.createRenderType("fmpcbe_mpblock")
-    var batchBuffer: Tessellator = null
+    val renderType: net.minecraft.util.EnumBlockRenderType = BlockRenderingRegistry.createRenderType("fmpcbe_mpblock")
+    var batchBuffer: Tessellator = uninitialized
 
-    def init() {
+    def init(): Unit = {
         BlockRenderingRegistry.registerRenderer(renderType, this)
-        val mapping = new ObfMapping("net/minecraft/client/renderer/tileentity/TileEntityRendererDispatcher", "batchBuffer", "net/minecraft/client/renderer/Tessellator")
-        batchBuffer = ReflectionManager.getField(mapping, TileEntityRendererDispatcher.instance, classOf[Tessellator])
+        batchBuffer = TileEntityRendererDispatcher.instance.batchBuffer
     }
 
 
-    override def render(tile: TTESRRenderTile, x: Double, y: Double, z: Double, delta: Float, destroyStage: Int, alpha: Float) {
+    override def render(tile: TTESRRenderTile, x: Double, y: Double, z: Double, delta: Float, destroyStage: Int, alpha: Float): Unit = {
         val pos = new Vector3(x, y, z)
         val pass = MinecraftForgeClient.getRenderPass
         val ccrs = CCRenderState.instance()
         ccrs.reset()
-        if (tile.fastRenderParts.nonEmpty) {
+        if (tile.fastRenderParts.asScala.nonEmpty) {
             //Whoo batch buffer is drawing, Lets use that.
             if (batchBuffer != null && batchBuffer.getBuffer.isDrawing) {
                 val buffer = batchBuffer.getBuffer
@@ -78,12 +76,12 @@ object MultipartRenderer extends TileEntitySpecialRenderer[TTESRRenderTile] with
                 GlStateManager.disableBlend()
             }
         }
-        if (tile.dynamicRenderParts.nonEmpty) {
+        if (tile.dynamicRenderParts.asScala.nonEmpty) {
             tile.renderDynamic(pos, pass, delta)
         }
     }
 
-    override def renderTileEntityFast(tile: TTESRRenderTile, x: Double, y: Double, z: Double, frame: Float, destroyStage: Int, alpha: Float, buffer: BufferBuilder) {
+    override def renderTileEntityFast(tile: TTESRRenderTile, x: Double, y: Double, z: Double, frame: Float, destroyStage: Int, alpha: Float, buffer: BufferBuilder): Unit = {
         val ccrs = CCRenderState.instance()
         ccrs.reset()
         buffer.setTranslation(0, 0, 0)
@@ -92,7 +90,7 @@ object MultipartRenderer extends TileEntitySpecialRenderer[TTESRRenderTile] with
         buffer.setTranslation(0, 0, 0)
     }
 
-    override def renderBlock(world: IBlockAccess, pos: BlockPos, state: IBlockState, buffer: BufferBuilder) =
+    override def renderBlock(world: IBlockAccess, pos: BlockPos, state: IBlockState, buffer: BufferBuilder): Boolean =
         getClientTile(world, pos) match {
             case null => false
             case tile =>
@@ -103,7 +101,7 @@ object MultipartRenderer extends TileEntitySpecialRenderer[TTESRRenderTile] with
                 tile.renderStatic(Vector3.fromBlockPos(pos), MinecraftForgeClient.getRenderLayer, ccrs)
         }
 
-    override def handleRenderBlockDamage(world: IBlockAccess, pos: BlockPos, state: IBlockState, sprite: TextureAtlasSprite, buffer: BufferBuilder) {
+    override def handleRenderBlockDamage(world: IBlockAccess, pos: BlockPos, state: IBlockState, sprite: TextureAtlasSprite, buffer: BufferBuilder): Unit = {
         getClientTile(world, pos) match {
             case null =>
             case tile =>
@@ -114,9 +112,9 @@ object MultipartRenderer extends TileEntitySpecialRenderer[TTESRRenderTile] with
         }
     }
 
-    override def renderBrightness(state: IBlockState, brightness: Float) {}
+    override def renderBrightness(state: IBlockState, brightness: Float): Unit = {}
 
-    override def registerTextures(map: TextureMap) {}
+    override def registerTextures(map: TextureMap): Unit = {}
 }
 
 //TODO, This is probably not needed?

@@ -8,13 +8,13 @@ import net.minecraft.block.Block
 import net.minecraft.item.ItemStack
 import net.minecraftforge.fml.common.event.FMLInterModComms.IMCMessage
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.{Map => MMap}
 
 object ConfigContent {
     private val nameMap = MMap[String, Seq[Int]]()
 
-    def parse(cfgDir: File) {
+    def parse(cfgDir: File): Unit = {
         val cfgFile = new File(cfgDir, "microblocks.cfg")
         try {
             if (!cfgFile.exists()) {
@@ -28,7 +28,7 @@ object ConfigContent {
         }
     }
 
-    def generateDefault(cfgFile: File) {
+    def generateDefault(cfgFile: File): Unit = {
         val writer = new PrintWriter(cfgFile)
         writer.println("#Configuration file for adding microblock materials for aesthetic blocks added by mods")
         writer.println("#Each line needs to be of the form <name>:<meta>")
@@ -38,7 +38,7 @@ object ConfigContent {
         writer.close()
     }
 
-    def loadLine(line: String) {
+    def loadLine(line: String): Unit = {
         if (line.startsWith("#") || line.length < 3) {
             return
         }
@@ -62,7 +62,7 @@ object ConfigContent {
                 throw new IllegalArgumentException("Name must be followed by a colon separator")
             }
 
-            metas = line.substring(q2 + 2).split(",").flatMap { s =>
+            metas = line.substring(q2 + 2).split(",").toSeq.flatMap { s =>
                 if (s.contains("-")) {
                     val split2 = s.split("-")
                     if (split2.length != 2) {
@@ -79,10 +79,10 @@ object ConfigContent {
         nameMap.put(name, metas)
     }
 
-    def loadLines(cfgFile: File) {
+    def loadLines(cfgFile: File): Unit = {
         val reader = new BufferedReader(new FileReader(cfgFile))
         var s: String = null
-        do {
+        while ({ {
             s = reader.readLine
             if (s != null) {
                 try {
@@ -95,12 +95,12 @@ object ConfigContent {
                 }
             }
         }
-        while (s != null)
+        ; s != null}) ()
         reader.close()
     }
 
-    def load() {
-        for (block <- Block.REGISTRY.asInstanceOf[JIterable[Block]]) {
+    def load(): Unit = {
+        for (block <- Block.REGISTRY.asInstanceOf[JIterable[Block]].asScala) {
             val metas = Seq(block.getRegistryName.toString).flatMap(nameMap.remove).flatten
             metas.foreach { m =>
                 val state = block.getStateFromMeta(m)
@@ -121,10 +121,10 @@ object ConfigContent {
         nameMap.foreach(e => logger.warn("Unable to add micro material for block with unlocalised name " + e._1 + " as it doesn't exist"))
     }
 
-    def handleIMC(messages: Seq[IMCMessage]) {
+    def handleIMC(messages: Seq[IMCMessage]): Unit = {
         messages.filter(_.key == "microMaterial").foreach { msg =>
 
-            def error(s: String) {
+            def error(s: String): Unit = {
                 logger.error("Invalid microblock IMC message from " + msg.getSender + ": " + s)
             }
 

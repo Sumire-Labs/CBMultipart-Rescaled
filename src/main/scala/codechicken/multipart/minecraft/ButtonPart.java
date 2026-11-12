@@ -27,7 +27,8 @@ public class ButtonPart extends McSidedMetaPart implements IFaceRedstonePart {
     }
 
     public ButtonPart(IBlockState state) {
-        super(state);
+        // Vanilla's pending release tick is lost when converting the block to a part.
+        super(state.withProperty(BlockButton.POWERED, false));
     }
 
     @Override

@@ -10,10 +10,10 @@ import org.objectweb.asm.tree.ClassNode
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-class ASMMixinFactory[T](val baseType: Class[T], private val paramTypes: Class[_]*) {
+class ASMMixinFactory[T](val baseType: Class[T], private val paramTypes: Class[?]*) {
     private val traitMap = mutable.Map[String, Int]()
     private val traits = ArrayBuffer[String]()
-    private val classMap = mutable.Map[JBitSet, Constructor[_ <: T]]()
+    private val classMap = mutable.Map[JBitSet, Constructor[? <: T]]()
 
     private var ugenid = 0
 
@@ -31,28 +31,28 @@ class ASMMixinFactory[T](val baseType: Class[T], private val paramTypes: Class[_
         })
             seq += traits(i)
 
-        val c = ASMMixinCompiler.mixinClasses(nextName(), baseType.nodeName, seq.result()).asInstanceOf[Class[_ <: T]]
+        val c = ASMMixinCompiler.mixinClasses(nextName(), baseType.nodeName, seq.result()).asInstanceOf[Class[? <: T]]
         onCompiled(c, traitSet)
-        c.getDeclaredConstructor(paramTypes: _*)
+        c.getDeclaredConstructor(paramTypes*)
     }
 
-    protected def onCompiled(clazz: Class[_ <: T], traitSet: JBitSet) {}
+    protected def onCompiled(clazz: Class[? <: T], traitSet: JBitSet): Unit = {}
 
-    protected def autoCompleteJavaTrait(cnode: ClassNode) {}
+    protected def autoCompleteJavaTrait(cnode: ClassNode): Unit = {}
 
-    def construct(traitSet: JBitSet, args: Object*) = synchronized {
+    def construct(traitSet: JBitSet, args: Object*): T = synchronized {
         (classMap.get(traitSet) match {
             case Some(c) => c
             case None =>
                 val c = compile(traitSet)
                 classMap.put(traitSet.copy, c)
                 c
-        }).newInstance(args: _*)
+        }).newInstance(args *)
     }
 
-    def getId(s_trait: String) = traitMap(s_trait)
+    def getId(s_trait: String): Int = traitMap(s_trait)
 
-    def registerTrait(traitClass: Class[_]): Int = registerTrait(traitClass.nodeName)
+    def registerTrait(traitClass: Class[?]): Int = registerTrait(traitClass.nodeName)
 
     def registerTrait(s_trait: String): Int = {
         val cnode = classNode(s_trait)
@@ -67,10 +67,12 @@ class ASMMixinFactory[T](val baseType: Class[T], private val paramTypes: Class[_
 
         val info = getClassInfo(cnode)
 
-        def concreteParent(info: ClassInfo): ClassInfo = info.superClass.map {
-            case i if i.isTrait => concreteParent(i)
-            case i => i
-        }.get
+        def concreteParent(info: ClassInfo): ClassInfo = info.superClass match {
+            case Some(i) if i.isTrait => concreteParent(i)
+            case Some(i) => i
+            case None =>
+                info.interfaces.iterator.map(concreteParent).find(_ != null).getOrElse(getClassInfo(baseType))
+        }
 
         val parentName = concreteParent(info).name
 

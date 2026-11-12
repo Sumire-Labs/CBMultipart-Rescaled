@@ -13,15 +13,16 @@ import net.minecraft.block.properties.PropertyBool
 import net.minecraft.block.state.{BlockFaceShape, BlockStateContainer, IBlockState}
 import net.minecraft.client.Minecraft
 import net.minecraft.client.particle.ParticleManager
-import net.minecraft.entity.Entity
+import net.minecraft.entity.{Entity, EntityLivingBase}
 import net.minecraft.entity.player.EntityPlayer
 import net.minecraft.item.ItemStack
+import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.math.{AxisAlignedBB, BlockPos, RayTraceResult, Vec3d}
 import net.minecraft.util.{BlockRenderLayer, EnumFacing, EnumHand}
-import net.minecraft.world.{Explosion, IBlockAccess, World}
+import net.minecraft.world.{Explosion, IBlockAccess, World, WorldServer}
 import net.minecraftforge.fml.relauncher.{Side, SideOnly}
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 
 /**
  * Internal RayTracing class that can save parts as part of their hit data
@@ -56,6 +57,7 @@ object BlockMultipart {
         (getClientTile(world, hit.getBlockPos), hit) match {
             case (null, _) => false
             case (tile, pHit: PartRayTraceResult) => tile.drawHighlight(player, pHit, frame)
+            case _ => false
         }
     }
 }
@@ -69,7 +71,7 @@ class BlockMultipart extends Block(Material.ROCK) {
 
     override def hasTileEntity(state: IBlockState) = true
 
-    override def createTileEntity(world: World, state: IBlockState) = {
+    override def createTileEntity(world: World, state: IBlockState): TileEntity = {
         if(world.isRemote) {
             null
         } else {
@@ -97,7 +99,7 @@ class BlockMultipart extends Block(Material.ROCK) {
             case tile => tile.partList.isEmpty
         }
 
-    override def addCollisionBoxToList(state: IBlockState, world: World, pos: BlockPos, entityBox: AxisAlignedBB, collidingBoxes: JList[AxisAlignedBB], entity: Entity, flag: Boolean) {
+    override def addCollisionBoxToList(state: IBlockState, world: World, pos: BlockPos, entityBox: AxisAlignedBB, collidingBoxes: JList[AxisAlignedBB], entity: Entity, flag: Boolean): Unit = {
         getTile(world, pos) match {
             case null =>
             case tile => tile.addCollisionBoxToList(entityBox, collidingBoxes)
@@ -113,7 +115,7 @@ class BlockMultipart extends Block(Material.ROCK) {
     def rayTraceAll(world: World, pos: BlockPos, start: Vec3d, end: Vec3d): Iterable[PartRayTraceResult] =
         getTile(world, pos) match {
             case null => Seq()
-            case tile => tile.rayTraceAll(start, end)
+            case tile => tile.rayTraceAll(start, end).asScala
         }
 
     override def getBlockFaceShape(world: IBlockAccess, state: IBlockState, pos: BlockPos, side: EnumFacing) =
@@ -145,7 +147,8 @@ class BlockMultipart extends Block(Material.ROCK) {
     override def getPlayerRelativeBlockHardness(state: IBlockState, player: EntityPlayer, world: World, pos: BlockPos): Float =
         (getTile(world, pos), retracePart(world, pos, player)) match {
             case (tile: TileMultipart, hit: PartRayTraceResult) => tile.getPlayerRelativeBlockHardness(player, hit)
-            case _ => 1 / 100F
+            case (null, _) => 1 / 100F
+            case (_, null) => 1 / 100F
         }
 
     override def removedByPlayer(state: IBlockState, world: World, pos: BlockPos, player: EntityPlayer, willHarvest: Boolean): Boolean = {
@@ -166,7 +169,7 @@ class BlockMultipart extends Block(Material.ROCK) {
         world.getTileEntity(pos) == null
     }
 
-    def dropAndDestroy(world: World, pos: BlockPos, state: IBlockState) {
+    def dropAndDestroy(world: World, pos: BlockPos, state: IBlockState): Unit = {
         val tile = getTile(world, pos)
         if (tile != null && !world.isRemote) {
             tile.dropItems(getDrops(world, pos, state, 0))
@@ -186,37 +189,40 @@ class BlockMultipart extends Block(Material.ROCK) {
     override def getPickBlock(state: IBlockState, target: RayTraceResult, world: World, pos: BlockPos, player: EntityPlayer): ItemStack =
         (getTile(world, pos), retracePart(world, pos, player)) match {
             case (tile: TileMultipart, hit: PartRayTraceResult) => tile.getPickBlock(hit)
-            case _ => ItemStack.EMPTY
+            case (null, _) => ItemStack.EMPTY
+            case (_, null) => ItemStack.EMPTY
         }
 
     override def onBlockActivated(world: World, pos: BlockPos, state: IBlockState, player: EntityPlayer, hand: EnumHand, side: EnumFacing, hitX: Float, hitY: Float, hitZ: Float): Boolean =
         (getTile(world, pos), retracePart(world, pos, player)) match {
             case (tile: TileMultipart, hit: PartRayTraceResult) => tile.onBlockActivated(player, hit, hand)
-            case _ => false
+            case (null, _) => false
+            case (_, null) => false
         }
 
-    override def onBlockClicked(world: World, pos: BlockPos, player: EntityPlayer) {
+    override def onBlockClicked(world: World, pos: BlockPos, player: EntityPlayer): Unit = {
         (getTile(world, pos), retracePart(world, pos, player)) match {
             case (tile: TileMultipart, hit: PartRayTraceResult) => tile.onBlockClicked(player, hit)
-            case _ =>
+            case (null, _) =>
+            case (_, null) =>
         }
     }
 
-    override def onEntityCollidedWithBlock(world: World, pos: BlockPos, state: IBlockState, entity: Entity) {
+    override def onEntityCollision(world: World, pos: BlockPos, state: IBlockState, entity: Entity): Unit = {
         getTile(world, pos) match {
             case null =>
             case tile => tile.onEntityCollision(entity)
         }
     }
 
-    override def onEntityWalk(world: World, pos: BlockPos, entity: Entity) {
+    override def onEntityWalk(world: World, pos: BlockPos, entity: Entity): Unit = {
         getTile(world, pos) match {
             case null =>
             case tile => tile.onEntityStanding(entity)
         }
     }
 
-    override def neighborChanged(state: IBlockState, world: World, pos: BlockPos, neighborBlock: Block, fromPos: BlockPos) {
+    override def neighborChanged(state: IBlockState, world: World, pos: BlockPos, neighborBlock: Block, fromPos: BlockPos): Unit = {
         getTile(world, pos) match {
             case null =>
             case tile =>
@@ -225,7 +231,7 @@ class BlockMultipart extends Block(Material.ROCK) {
         }
     }
 
-    override def onNeighborChange(world: IBlockAccess, pos: BlockPos, neighbor: BlockPos) {
+    override def onNeighborChange(world: IBlockAccess, pos: BlockPos, neighbor: BlockPos): Unit = {
         getTile(world, pos) match {
             case null =>
             case tile => tile.onNeighborTileChange(neighbor)
@@ -264,15 +270,27 @@ class BlockMultipart extends Block(Material.ROCK) {
     override def canRenderInLayer(state: IBlockState, layer: BlockRenderLayer) = true
 
     @SideOnly(Side.CLIENT)
-    override def randomDisplayTick(state: IBlockState, world: World, pos: BlockPos, rand: Random) {
+    override def randomDisplayTick(state: IBlockState, world: World, pos: BlockPos, rand: Random): Unit = {
         getClientTile(world, pos) match {
             case null =>
             case tile => tile.randomDisplayTick(rand)
         }
     }
 
+    override def addLandingEffects(state: IBlockState, world: WorldServer, pos: BlockPos, actualState: IBlockState, entity: EntityLivingBase, numberOfParticles: Int): Boolean =
+        MultipartParticleEffects.dispatchLandingEffects(world, pos, entity, numberOfParticles)
+
+    override def addRunningEffects(state: IBlockState, world: World, pos: BlockPos, entity: Entity): Boolean = {
+        if (world.isRemote) {
+            MultipartProxy.handleRunningEffects(world, pos, entity)
+        }
+        // The shared BlockMultipart state cannot identify a part, so never let
+        // vanilla create a BLOCK_CRACK particle from its static model.
+        true
+    }
+
     @SideOnly(Side.CLIENT)
-    override def addHitEffects(state: IBlockState, world: World, hit: RayTraceResult, manager: ParticleManager) = {
+    override def addHitEffects(state: IBlockState, world: World, hit: RayTraceResult, manager: ParticleManager): Boolean = {
         (getClientTile(world, hit.getBlockPos), hit) match {
             case (tile: TileMultipartClient, pHit: PartRayTraceResult) => tile.addHitEffects(pHit, manager)
             case _ =>

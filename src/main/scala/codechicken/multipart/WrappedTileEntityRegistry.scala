@@ -2,7 +2,6 @@ package codechicken.multipart
 
 import java.util.{HashMap => JHashMap}
 
-import codechicken.lib.reflect.{ObfMapping, ReflectionManager}
 import net.minecraft.tileentity.TileEntity
 import net.minecraft.util.ResourceLocation
 import net.minecraft.util.registry.RegistryNamespaced
@@ -35,18 +34,16 @@ import net.minecraft.util.registry.RegistryNamespaced
  */
 object WrappedTileEntityRegistry {
 
-    private val tileRegistry = new ObfMapping("net/minecraft/tileentity/TileEntity", "field_190562_f")
-
-    val wrapped: RegistryNamespaced[ResourceLocation, Class[_ <: TileEntity]] =
-        ReflectionManager.getField(tileRegistry, null, classOf[RegistryNamespaced[ResourceLocation, Class[_ <: TileEntity]]])
+    // fmp_at.cfg exposes this field and removes final in both userdev and production.
+    val wrapped: RegistryNamespaced[ResourceLocation, Class[? <: TileEntity]] = TileEntity.REGISTRY
     val INSTANCE = new DuplicateValueRegistry(wrapped)
 
 
-    def init() {
-        ReflectionManager.setField(tileRegistry, null, INSTANCE)
+    def init(): Unit = {
+        TileEntity.REGISTRY = INSTANCE.asInstanceOf[RegistryNamespaced[ResourceLocation, Class[? <: TileEntity]]]
     }
 
-    def registerMapping(clazz: Class[_ <: TileEntity], key: ResourceLocation) {
+    def registerMapping(clazz: Class[? <: TileEntity], key: ResourceLocation): Unit = {
         INSTANCE.addMapping(clazz, key)
     }
 }

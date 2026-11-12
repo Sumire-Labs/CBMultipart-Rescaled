@@ -8,7 +8,7 @@ import codechicken.lib.vec._
 import codechicken.multipart._
 import net.minecraft.util.{BlockRenderLayer, ResourceLocation}
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 
 object EdgePlacement extends PlacementProperties {
 
@@ -48,7 +48,7 @@ object EdgePlacement extends PlacementProperties {
         }
 
         if (pmt.internal && !pmt.oppMod) {
-            return pmt.internalPlacement(pmt.htile.asInstanceOf[TileMultipart], part)
+            return pmt.internalPlacement(pmt.htile, part)
         }
 
         pmt.externalPlacement(part)
@@ -114,10 +114,10 @@ object PostMicroFactory extends MicroblockFactory {
 }
 
 trait PostMicroblockClient extends PostMicroblock with MicroblockClient {
-    var renderBounds1: Cuboid6 = _
-    var renderBounds2: Cuboid6 = _
+    var renderBounds1: Cuboid6 = scala.compiletime.uninitialized
+    var renderBounds2: Cuboid6 = scala.compiletime.uninitialized
 
-    override def render(pos: Vector3, layer: BlockRenderLayer, ccrs: CCRenderState) {
+    override def render(pos: Vector3, layer: BlockRenderLayer, ccrs: CCRenderState): Unit = {
         val mat = getIMaterial
         if (layer == null) {
             MicroblockRender.renderCuboid(pos, ccrs, mat, layer, getBounds, 0)
@@ -129,21 +129,21 @@ trait PostMicroblockClient extends PostMicroblock with MicroblockClient {
         }
     }
 
-    override def onPartChanged(part: TMultiPart) {
+    override def onPartChanged(part: TMultiPart): Unit = {
         recalcBounds()
     }
 
-    override def onAdded() {
+    override def onAdded(): Unit = {
         super.onAdded()
         recalcBounds()
     }
 
-    override def read(packet: MCDataInput) {
+    override def read(packet: MCDataInput): Unit = {
         super.read(packet)
         recalcBounds()
     }
 
-    def recalcBounds() {
+    def recalcBounds(): Unit = {
         renderBounds1 = getBounds.copy
         renderBounds2 = null
 
@@ -157,14 +157,14 @@ trait PostMicroblockClient extends PostMicroblock with MicroblockClient {
         }
     }
 
-    def shrinkFace(fside: Int) {
+    def shrinkFace(fside: Int): Unit = {
         val part = tile.partMap(fside)
         if (part != null && part.isInstanceOf[FaceMicroblock]) {
             MicroOcclusion.shrink(renderBounds1, part.asInstanceOf[CommonMicroblock].getBounds, fside)
         }
     }
 
-    def shrinkPost(post: PostMicroblock) {
+    def shrinkPost(post: PostMicroblock): Unit = {
         if (post == this) {
             return
         }
@@ -190,7 +190,7 @@ trait PostMicroblock extends Microblock with TPartialOcclusionPart with TNormalO
 
     def getBounds = PostMicroFactory.aBounds(shape)
 
-    def getOcclusionBoxes = Seq(getBounds)
+    def getOcclusionBoxes = Seq(getBounds).asJava
 
     def getPartialOcclusionBoxes = getOcclusionBoxes
 

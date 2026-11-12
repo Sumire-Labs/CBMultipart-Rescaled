@@ -1,7 +1,5 @@
 package codechicken.microblock
 
-import java.util.{LinkedList => JLinkedList, List => JList}
-
 import codechicken.lib.render.CCRenderState
 import codechicken.lib.render.pipeline.{ColourMultiplier, IVertexOperation}
 import codechicken.lib.texture.TextureUtils
@@ -20,7 +18,8 @@ import net.minecraft.util.{BlockRenderLayer, EnumFacing}
 import net.minecraftforge.common.ForgeHooks
 import net.minecraftforge.fml.relauncher.{Side, SideOnly}
 
-import scala.collection.JavaConversions._
+import java.util.{LinkedList => JLinkedList}
+import scala.jdk.CollectionConverters._
 
 object MaterialRenderHelper {
     private val instances = new ThreadLocal[MaterialRenderHelper] {
@@ -64,13 +63,13 @@ class BlockMicroMaterial(val state: IBlockState, val materialID: String) extends
     val blockKey = state.getPropertyKeys
 
     @SideOnly(Side.CLIENT)
-    var icont: MultiIconTransformation = _
+    var icont: MultiIconTransformation = scala.compiletime.uninitialized
 
     @SideOnly(Side.CLIENT)
-    var pIconT: IconTransformation = _
+    var pIconT: IconTransformation = scala.compiletime.uninitialized
 
     @SideOnly(Side.CLIENT)
-    override def loadIcons() {
+    override def loadIcons(): Unit = {
         @SideOnly(Side.CLIENT)
         def getSideIcon(state: IBlockState, s: Int): TextureAtlasSprite = {
             val side = EnumFacing.VALUES(s)
@@ -79,11 +78,11 @@ class BlockMicroMaterial(val state: IBlockState, val materialID: String) extends
             if (model != null) {
                 val quads = new JLinkedList[BakedQuad]
                 quads.addAll(model.getQuads(state, side, 0))
-                quads.addAll(model.getQuads(state, null, 0).filter((quad: BakedQuad) => quad.getFace eq side))
+                quads.addAll(model.getQuads(state, null, 0).asScala.filter((quad: BakedQuad) => quad.getFace eq side).asJava)
                 if (quads.size > 0) {
                     val list = new JLinkedList[TextureAtlasSprite]
 
-                    for (quad <- quads) {
+                    for (quad <- quads.asScala) {
                         val sprite: TextureAtlasSprite = quad.getSprite
                         list.add(sprite)
                     }
@@ -94,7 +93,7 @@ class BlockMicroMaterial(val state: IBlockState, val materialID: String) extends
         }
 
         try {
-            icont = new MultiIconTransformation(Array.tabulate(6)(side => getSideIcon(state, side)): _*)
+            icont = new MultiIconTransformation(Array.tabulate(6)(side => getSideIcon(state, side))*)
             pIconT = new IconTransformation(TextureUtils.getParticleIconForBlock(state))
         } catch {
             case e: RuntimeException =>
@@ -167,8 +166,7 @@ object BlockMicroMaterial {
         val numOfProps = state.getProperties.size
         if (numOfProps > 0) {
             key += "["
-            import scala.collection.JavaConversions._
-            val properties = state.getProperties.iterator
+            val properties = state.getProperties.asScala.iterator
             while (properties.hasNext) {
                 val (p, v) = properties.next()
                 key += p.getName + "=" + v.toString
@@ -181,20 +179,20 @@ object BlockMicroMaterial {
         key
     }
 
-    def createAndRegister(block: Block) {
+    def createAndRegister(block: Block): Unit = {
         createAndRegister(block.getDefaultState)
     }
 
-    def createAndRegister(state: IBlockState) {
+    def createAndRegister(state: IBlockState): Unit = {
         val id = materialKey(state)
         MicroMaterialRegistry.registerMaterial(new BlockMicroMaterial(state, id), id)
     }
 
-    def createAndRegister(states: Seq[IBlockState]) {
+    def createAndRegister(states: Seq[IBlockState]): Unit = {
         states.foreach(createAndRegister)
     }
 
-    def createAndRegister(block: Block, metas: Seq[Int]) {
+    def createAndRegister(block: Block, metas: Seq[Int]): Unit = {
         createAndRegister(metas map block.getStateFromMeta)
     }
 }

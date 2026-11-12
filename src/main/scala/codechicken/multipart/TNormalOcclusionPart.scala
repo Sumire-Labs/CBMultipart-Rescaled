@@ -4,7 +4,7 @@ import java.lang.Iterable
 
 import codechicken.lib.vec.Cuboid6
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 
 /**
  * This suite of 3 classes provides simple functions for standard bounding box based occlusion testing.
@@ -16,7 +16,7 @@ object NormalOcclusionTest {
     /**
      * Performs the test, returns true if the test fails
      */
-    def apply(boxes1: Traversable[Cuboid6], boxes2: Traversable[Cuboid6]): Boolean =
+    def apply(boxes1: scala.collection.Iterable[Cuboid6], boxes2: scala.collection.Iterable[Cuboid6]): Boolean =
         boxes1.forall(v1 => boxes2.forall(v2 => !v1.intersects(v2)))
 
     /**
@@ -25,14 +25,14 @@ object NormalOcclusionTest {
     def apply(part1: TNormalOcclusionPart, part2: TMultiPart): Boolean = {
         var boxes = Seq[Cuboid6]()
         if (part2.isInstanceOf[TNormalOcclusionPart]) {
-            boxes = boxes ++ part2.asInstanceOf[TNormalOcclusionPart].getOcclusionBoxes
+            boxes = boxes ++ part2.asInstanceOf[TNormalOcclusionPart].getOcclusionBoxes.asScala
         }
 
         if (part2.isInstanceOf[TPartialOcclusionPart]) {
-            boxes = boxes ++ part2.asInstanceOf[TPartialOcclusionPart].getPartialOcclusionBoxes
+            boxes = boxes ++ part2.asInstanceOf[TPartialOcclusionPart].getPartialOcclusionBoxes.asScala
         }
 
-        NormalOcclusionTest(boxes, part1.getOcclusionBoxes)
+        NormalOcclusionTest(boxes, part1.getOcclusionBoxes.asScala)
     }
 }
 
@@ -53,7 +53,7 @@ trait TNormalOcclusionPart extends TMultiPart {
  * Utility part class for performing 3rd party occlusion tests
  */
 class NormallyOccludedPart(bounds: Iterable[Cuboid6]) extends TMultiPart with TNormalOcclusionPart {
-    def this(bound: Cuboid6) = this(Seq(bound))
+    def this(bound: Cuboid6) = this(Seq(bound).asJava)
 
     def getType = null
 

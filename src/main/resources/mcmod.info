@@ -1,29 +1,29 @@
 [
 {
   "modid": "forgemultipartcbe",
-  "name": "Forge Multipart CBE",
+  "name": "CBMultipart Rescaled",
   "description": "Open source library for facilitation of multiple functional parts in the one block space.",
-  "version": "${version}",
-  "mcversion": "${mc_version}",
-  "url": "https://github.com/Chicken-Bones/ForgeMultipart",
-  "authors": [ "ChickenBones" ]
+  "version": "@{MOD_VERSION}",
+  "mcversion": "1.12.2",
+  "url": "https://github.com/Sumire-Labs/CBMultipart-Rescaled",
+  "authorList": @{MOD_AUTHORS_JSON}
 },
 {
   "modid": "minecraftmultipartcbe",
   "name": "Minecraft Multipart Plugin",
   "description": "Provides multipart versions of some vanilla blocks like torches and buttons.",
-  "version": "${version}",
-  "mcversion": "${mc_version}",
-  "url": "https://github.com/Chicken-Bones/ForgeMultipart",
-  "authors": [ "ChickenBones" ]
+  "version": "@{MOD_VERSION}",
+  "mcversion": "1.12.2",
+  "url": "https://github.com/Sumire-Labs/CBMultipart-Rescaled",
+  "authorList": @{MOD_AUTHORS_JSON}
 },
 {
   "modid": "microblockcbe",
   "name": "Forge Microblocks",
   "description": "Microblocks for Forge MultipartCBE.",
-  "version": "${version}",
-  "mcversion": "${mc_version}",
-  "url": "https://github.com/Chicken-Bones/ForgeMultipart",
-  "authors": [ "ChickenBones" ]
+  "version": "@{MOD_VERSION}",
+  "mcversion": "1.12.2",
+  "url": "https://github.com/Sumire-Labs/CBMultipart-Rescaled",
+  "authorList": @{MOD_AUTHORS_JSON}
 }
 ]

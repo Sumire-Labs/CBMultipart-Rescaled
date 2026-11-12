@@ -1,7 +1,5 @@
 package codechicken.microblock
 
-import java.util.{List => JList}
-
 import codechicken.lib.raytracer.RayTracer
 import codechicken.lib.render.CCRenderState
 import codechicken.lib.render.item.IItemRenderer
@@ -26,7 +24,7 @@ import net.minecraftforge.common.model.IModelState
 import org.lwjgl.opengl.GL11
 
 class ItemMicroPart extends Item {
-    setUnlocalizedName("microblock")
+    setTranslationKey("microblock")
     setHasSubtypes(true)
 
     override def getItemStackDisplayName(stack: ItemStack): String = {
@@ -37,10 +35,10 @@ class ItemMicroPart extends Item {
             return "Unnamed"
         }
 
-        I18n.translateToLocalFormatted(mcrFactory.getName.getResourcePath + "." + size + ".name", material.getLocalizedName)
+        I18n.translateToLocalFormatted(mcrFactory.getName.getPath + "." + size + ".name", material.getLocalizedName)
     }
 
-    override def getSubItems(tab: CreativeTabs, list: NonNullList[ItemStack]) {
+    override def getSubItems(tab: CreativeTabs, list: NonNullList[ItemStack]): Unit = {
         if (MicroMaterialRegistry.getIdMap != null && isInCreativeTab(tab)) {
             for (factoryID <- factories.indices) {
                 val factory = factories(factoryID)
@@ -88,7 +86,7 @@ class ItemMicroPart extends Item {
 }
 
 object ItemMicroPart {
-    def checkTagCompound(stack: ItemStack) {
+    def checkTagCompound(stack: ItemStack): Unit = {
         if (!stack.hasTagCompound) {
             stack.setTagCompound(new NBTTagCompound())
         }
@@ -164,7 +162,7 @@ object ItemMicroPartRenderer extends IItemRenderer {
 
     override def getTransforms: IModelState = TransformUtils.DEFAULT_BLOCK
 
-    override def renderItem(item: ItemStack, transformType: TransformType) {
+    override def renderItem(item: ItemStack, transformType: TransformType): Unit = {
         val material = getMaterial(item)
         val factory = getFactory(item)
         val size = getSize(item)

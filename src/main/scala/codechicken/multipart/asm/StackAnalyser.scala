@@ -5,7 +5,7 @@ import org.objectweb.asm.Type
 import org.objectweb.asm.Type._
 import org.objectweb.asm.tree._
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.{ListBuffer => MList, Map => MMap}
 
 object StackAnalyser {
@@ -126,7 +126,7 @@ class StackAnalyser(val owner: Type, val m: MethodNode) {
         for (i <- 0 until ptypes.length)
             pushL(Param(i, ptypes(i)))
 
-        m.tryCatchBlocks.foreach(b => catchHandlers.put(b.handler, b))
+        m.tryCatchBlocks.asScala.foreach(b => catchHandlers.put(b.handler, b))
     }
 
     def pushL(entry: LocalEntry) = setL(locals.size, entry)
@@ -154,7 +154,7 @@ class StackAnalyser(val owner: Type, val m: MethodNode) {
 
     def peek(i: Int = 0) = stack(stack.size - i - 1)
 
-    def insert(i: Int, entry: StackEntry) {
+    def insert(i: Int, entry: StackEntry): Unit = {
         if (entry.getType.getSize == 0) {
             return
         }
@@ -172,7 +172,7 @@ class StackAnalyser(val owner: Type, val m: MethodNode) {
         args
     }
 
-    def visitInsn(ainsn: AbstractInsnNode) {
+    def visitInsn(ainsn: AbstractInsnNode): Unit = {
         implicit val thisInsn = ainsn //passes to any StackEntry we create
         ainsn match {
             case insn: InsnNode => ainsn.getOpcode match {
@@ -272,10 +272,10 @@ class StackAnalyser(val owner: Type, val m: MethodNode) {
                     push(Invoke(ainsn.getOpcode, popArgs(minsn.desc), null, minsn))
             }
             case tinsn: TypeInsnNode => ainsn.getOpcode match {
-                case NEW => push(New(getType(tinsn.desc)))
+                case NEW => push(New(getObjectType(tinsn.desc)))
                 case NEWARRAY => push(NewArray(pop(), getType(tinsn.desc)))
-                case ANEWARRAY => push(NewArray(pop(), getType("[" + tinsn.desc)))
-                case CHECKCAST => push(Cast(pop(), getType(tinsn.desc)))
+                case ANEWARRAY => push(NewArray(pop(), getObjectType(tinsn.desc)))
+                case CHECKCAST => push(Cast(pop(), getObjectType(tinsn.desc)))
                 case INSTANCEOF => push(UnaryOp(INSTANCEOF, pop()))
             }
             case mainsn: MultiANewArrayInsnNode =>

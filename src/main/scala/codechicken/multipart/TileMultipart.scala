@@ -26,7 +26,7 @@ import net.minecraft.util.{BlockRenderLayer, EnumFacing, EnumHand, ResourceLocat
 import net.minecraft.world.{EnumSkyBlock, World}
 import net.minecraftforge.common.capabilities.{Capability, ICapabilityProvider}
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ListBuffer
 
 class TileMultipart extends TileEntity with IChunkLoadTile {
@@ -38,9 +38,9 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
     /**
      * Implicit java conversion of part list
      */
-    def jPartList: JList[TMultiPart] = partList
+    def jPartList: JList[TMultiPart] = partList.asJava
 
-    private[multipart] def from(that: TileMultipart) {
+    private[multipart] def from(that: TileMultipart): Unit = {
         copyFrom(that)
         loadFrom(that)
         that.loadTo(this)
@@ -52,7 +52,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
      * This method should be used for copying all the data from the fields in that container tile.
      * This method will be automatically generated on java tile traits with fields if it is not overridden.
      */
-    def copyFrom(that: TileMultipart) {
+    def copyFrom(that: TileMultipart): Unit = {
         partList = that.partList
         capParts = that.capParts
         resetCapCache()
@@ -61,7 +61,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
     /**
      * Used to load the newly accuired data from copyFrom.
      */
-    def loadFrom(that: TileMultipart) {
+    def loadFrom(that: TileMultipart): Unit = {
         partList.foreach(_.bind(this))
     }
 
@@ -73,14 +73,14 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
      *
      * @param that The new tile
      */
-    def loadTo(that: TileMultipart) {}
+    def loadTo(that: TileMultipart): Unit = {}
 
     /**
      * Remove all parts from internal cache.
      *
      * Provided for trait overrides, do not call externally.
      */
-    def clearParts() {
+    def clearParts(): Unit = {
         partList = Seq()
         capParts = new JLinkedList[ICapabilityProvider]()
         resetCapCache()
@@ -91,21 +91,21 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
      *
      * Provided for trait overrides, do not call externally.
      */
-    def bindPart(part: TMultiPart) {}
+    def bindPart(part: TMultiPart): Unit = {}
 
     /**
      * Called when a part is added (placement).
      *
      * Provided for trait overrides, do not call externally.
      */
-    def partAdded(part: TMultiPart) {}
+    def partAdded(part: TMultiPart): Unit = {}
 
     /**
      * Remove this part from internal cache.
      *
      * Provided for trait overrides, do not call externally.
      */
-    def partRemoved(part: TMultiPart, p: Int) {}
+    def partRemoved(part: TMultiPart, p: Int): Unit = {}
 
     /**
      * Blank implementation
@@ -119,7 +119,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
      *
      * Overriden by TTileChangeTile
      */
-    def onNeighborTileChange(neighborPos: BlockPos) {}
+    def onNeighborTileChange(neighborPos: BlockPos): Unit = {}
 
     /**
      * Blank implementation.
@@ -128,7 +128,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
      */
     def partMap(slot: Int): TMultiPart = null
 
-    def operate(f: (TMultiPart) => Unit) {
+    def operate(f: (TMultiPart) => Unit): Unit = {
         val it = partList.iterator
         while (it.hasNext) {
             val p = it.next()
@@ -156,7 +156,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
     /**
      * Writes the description of this tile, and all parts composing it, to packet
      */
-    def writeDesc(packet: MCDataOutput) {
+    def writeDesc(packet: MCDataOutput): Unit = {
         packet.writeByte(partList.size)
         partList.foreach { part =>
             MultiPartRegistry.writePartID(packet, part)
@@ -206,7 +206,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
         parts.forall(part => part.occlusionTest(npart) && npart.occlusionTest(part))
     }
 
-    private[multipart] def addPart_impl(part: TMultiPart) {
+    private[multipart] def addPart_impl(part: TMultiPart): Unit = {
         if (!world.isRemote) writeAddPart(part)
 
         addPart_do(part)
@@ -218,20 +218,20 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
         markRender()
     }
 
-    private[multipart] def writeAddPart(part: TMultiPart) {
+    private[multipart] def writeAddPart(part: TMultiPart): Unit = {
         val stream = getWriteStream.writeByte(253)
         MultiPartRegistry.writePartID(stream, part)
         part.writeDesc(stream)
     }
 
-    private[multipart] def addPart_do(part: TMultiPart) {
+    private[multipart] def addPart_do(part: TMultiPart): Unit = {
         assert(partList.size < 250, "Tried to add more than 250 parts to the one tile. You're doing it wrong")
 
         partList = partList :+ part
         bindPart(part)
         part match {
             case p: ICapabilityProvider =>
-                capParts += p
+                capParts.asScala += p
                 resetCapCache()
             case _ =>
         }
@@ -274,7 +274,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
         partRemoved(part, r)
         part match {
             case p: ICapabilityProvider =>
-                capParts -= p
+                capParts.asScala -= p
                 resetCapCache()
             case _ =>
         }
@@ -285,7 +285,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
         r
     }
 
-    private[multipart] def loadParts(parts: Iterable[TMultiPart]) {
+    private[multipart] def loadParts(parts: Iterable[TMultiPart]): Unit = {
         clearParts()
         parts.foreach(p => addPart_do(p))
         if (world != null) {
@@ -296,7 +296,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
         }
     }
 
-    final def setValid(b: Boolean) {
+    final def setValid(b: Boolean): Unit = {
         if (b) {
             super.validate()
         } else {
@@ -304,7 +304,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
         }
     }
 
-    override def invalidate() {
+    override def invalidate(): Unit = {
         if (!isInvalid) {
             super.invalidate()
             if (world != null) {
@@ -316,7 +316,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
         }
     }
 
-    override def validate() {
+    override def validate(): Unit = {
         super.validate()
         if (world != null && world.isRemote) {
             TileCache.add(this)
@@ -328,10 +328,10 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
     /**
      * Internal block callback to obtain entity collision boxes
      */
-    def addCollisionBoxToList(entityBox: AxisAlignedBB, list: JList[AxisAlignedBB]) {
+    def addCollisionBoxToList(entityBox: AxisAlignedBB, list: JList[AxisAlignedBB]): Unit = {
         val mask = new Cuboid6(entityBox).subtract(pos) //get entityBox in zero-space
         partList.foreach {
-            _.getCollisionBoxes.foreach { c =>
+            _.getCollisionBoxes.asScala.foreach { c =>
                 if (c.intersects(mask)) list.add(c.aabb().offset(pos))
             }
         }
@@ -340,28 +340,28 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
     /**
      * Perform a raytrace returning the nearest intersecting part
      */
-    def collisionRayTrace(start: Vec3d, end: Vec3d): PartRayTraceResult = rayTraceAll(start, end).headOption.orNull
+    def collisionRayTrace(start: Vec3d, end: Vec3d): PartRayTraceResult = rayTraceAll(start, end).asScala.headOption.orNull
 
     /**
      * Perform a raytrace returning all intersecting parts sorted nearest to farthest
      */
     def rayTraceAll(start: Vec3d, end: Vec3d): JIterable[PartRayTraceResult] = {
-        var list = ListBuffer[PartRayTraceResult]()
+        val list = ListBuffer[PartRayTraceResult]()
         for ((p, i) <- partList.view.zipWithIndex)
             p.collisionRayTrace(start, end) match {
                 case crtr: CuboidRayTraceResult =>
                     val partMOP = new PartRayTraceResult(i, crtr)
                     list += partMOP
-                case _ =>
+                case null =>
             }
 
-        list.asInstanceOf[ListBuffer[DistanceRayTraceResult]].sorted.asInstanceOf[ListBuffer[PartRayTraceResult]]
+        list.asInstanceOf[ListBuffer[DistanceRayTraceResult]].sorted.asInstanceOf[ListBuffer[PartRayTraceResult]].asJava
     }
 
     /**
      * Drop and remove part at index (internal mining callback)
      */
-    def harvestPart(hit: PartRayTraceResult, player: EntityPlayer) =
+    def harvestPart(hit: PartRayTraceResult, player: EntityPlayer): Unit =
         partList(hit.partIndex) match {
             case null =>
             case part => part.harvest(player, hit)
@@ -369,26 +369,26 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
 
     def getDrops: JArrayList[ItemStack] = {
         val list = new JArrayList[ItemStack]()
-        partList.foreach { _.getDrops.foreach { list.add } }
+        partList.foreach { _.getDrops.asScala.foreach { list.add } }
         list
     }
 
-    def getPickBlock(hit: PartRayTraceResult) =
+    def getPickBlock(hit: PartRayTraceResult): ItemStack =
         partList(hit.partIndex) match {
             case null => null
             case part => part.pickItem(hit)
         }
 
-    def isSolid(side: Int) = partMap(side) match {
+    def isSolid(side: Int): Boolean = partMap(side) match {
         case face: TFacePart => face.solid(side)
         case _ => false
     }
 
-    def canPlaceTorchOnTop = partList.exists(_.canPlaceTorchOnTop) || isSolid(1)
+    def canPlaceTorchOnTop: Boolean = partList.exists(_.canPlaceTorchOnTop) || isSolid(1)
 
-    def getExplosionResistance(entity: Entity) = partList.view.map(_.getExplosionResistance(entity)).max
+    def getExplosionResistance(entity: Entity): Float = partList.view.map(_.getExplosionResistance(entity)).max
 
-    def getLightValue = partList.view.map(_.getLightValue).max
+    def getLightValue: Int = partList.view.map(_.getLightValue).max
 
     def getPlayerRelativeBlockHardness(player: EntityPlayer, hit: PartRayTraceResult): Float = {
         if (hit == null) return 1 / 100F
@@ -398,17 +398,17 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
         }
     }
 
-    override def onChunkUnload() {
+    override def onChunkUnload(): Unit = {
         operate(_.onChunkUnload())
     }
 
-    override def onChunkLoad() {
+    override def onChunkLoad(): Unit = {
         operate(_.onChunkLoad())
     }
 
-    override def setWorldCreate(worldIn: World) = setWorld(worldIn)
+    override def setWorldCreate(worldIn: World): Unit = setWorld(worldIn)
 
-    def onMoved() {
+    def onMoved(): Unit = {
         operate(_.onMoved())
     }
 
@@ -420,7 +420,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
         }
     }
 
-    def onBlockClicked(player: EntityPlayer, hit: PartRayTraceResult) {
+    def onBlockClicked(player: EntityPlayer, hit: PartRayTraceResult): Unit = {
         if (hit != null) {
             partList(hit.partIndex) match {
                 case null =>
@@ -432,23 +432,23 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
     /**
      * Internal callback
      */
-    def onEntityCollision(entity: Entity) {
+    def onEntityCollision(entity: Entity): Unit = {
         operate(_.onEntityCollision(entity))
     }
 
     /**
      * Internal callback
      */
-    def onEntityStanding(entity: Entity) {
+    def onEntityStanding(entity: Entity): Unit = {
         operate(_.onEntityStanding(entity))
     }
 
     @Deprecated
-    def onNeighborBlockChange() {
+    def onNeighborBlockChange(): Unit = {
         operate(_.onNeighborChanged())
     }
 
-    def onNeighborBlockChanged(pos: BlockPos) {
+    def onNeighborBlockChanged(pos: BlockPos): Unit = {
         operate(_.onNeighborBlockChanged(pos))
     }
 
@@ -472,7 +472,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
     /**
      * Notifies neighboring blocks that this tile has changed
      */
-    def notifyTileChange() {
+    def notifyTileChange(): Unit = {
         world.notifyNeighborsOfStateChange(pos, MultipartProxy.block, true)
     }
 
@@ -480,7 +480,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
      * Called by parts when they have changed in some form that affects the world.
      * Notifies neighbor blocks, the world and parts that share this host and recalculates lighting
      */
-    def notifyPartChange(part: TMultiPart) {
+    def notifyPartChange(part: TMultiPart): Unit = {
         internalPartChange(part)
 
         world.notifyBlockUpdate(pos, MultipartProxy.block.getDefaultState, MultipartProxy.block.getDefaultState, 3)
@@ -491,32 +491,32 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
     /**
      * Notifies parts sharing this host of a change
      */
-    def internalPartChange(part: TMultiPart) {
+    def internalPartChange(part: TMultiPart): Unit = {
         operate(p => if (part != p) p.onPartChanged(part))
     }
 
     /**
      * Notifies all parts not in the passed collection of a change from all the parts in the collection
      */
-    def multiPartChange(parts: JCollection[TMultiPart]) {
-        operate(p => if (!parts.contains(p)) parts.foreach(p.onPartChanged))
+    def multiPartChange(parts: JCollection[TMultiPart]): Unit = {
+        operate(p => if (!parts.contains(p)) parts.asScala.foreach(p.onPartChanged))
     }
 
     /**
      * Callback for parts to mark the chunk as needs saving
      */
-    override def markDirty() {
+    override def markDirty(): Unit = {
         world.markChunkDirty(pos, this)
     }
 
     /**
      * Mark this block space for a render update.
      */
-    def markRender() {
+    def markRender(): Unit = {
         world.markBlockRangeForRenderUpdate(pos, pos)
     }
 
-    def recalcLight(sky: Boolean, block: Boolean) {
+    def recalcLight(sky: Boolean, block: Boolean): Unit = {
         if (sky && !world.provider.isNether) {
             world.checkLightFor(EnumSkyBlock.SKY, pos)
         }
@@ -528,43 +528,43 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
     /**
      * Helper function for calling a second level notify on a side (eg indirect power from a lever)
      */
-    def notifyNeighborChange(side: Int) {
+    def notifyNeighborChange(side: Int): Unit = {
         world.notifyNeighborsOfStateChange(getPos.offset(EnumFacing.values()(side)), MultipartProxy.block, true)
     }
 
     /**
      * Utility function for dropping items around the center of this space
      */
-    def dropItems(items: JIterable[ItemStack]) {
+    def dropItems(items: JIterable[ItemStack]): Unit = {
         val pos = Vector3.fromTileCenter(this)
-        items.foreach(item => TileMultipart.dropItem(item, world, pos))
+        items.asScala.foreach(item => TileMultipart.dropItem(item, world, pos))
     }
 
-    override def shouldRefresh(world: World, pos: BlockPos, oldState: IBlockState, newState: IBlockState) = oldState.getBlock != newState.getBlock
+    override def shouldRefresh(world: World, pos: BlockPos, oldState: IBlockState, newState: IBlockState): Boolean = oldState.getBlock != newState.getBlock
 
     /** Capability handling */
 
     private var capParts = new JLinkedList[ICapabilityProvider]()
-    private var calculatedCaps = Set[Capability[_]]()
-    private var capMap = Map.empty[Capability[_], CapHolder[_]]
+    private var calculatedCaps = Set[Capability[?]]()
+    private var capMap = Map.empty[Capability[?], CapHolder[?]]
 
-    def resetCapCache() {
+    def resetCapCache(): Unit = {
         capMap = Map()
         calculatedCaps = Set()
     }
 
-    private def calculateCap(cap: Capability[_]) {
+    private def calculateCap(cap: Capability[?]): Unit = {
         if (calculatedCaps.contains(cap)) {
             return
         }
         calculatedCaps += cap
         val holder = new CapHolder[Any]
-        val genericValid = capParts.filter(_.hasCapability(cap, null))
+        val genericValid = capParts.asScala.filter(_.hasCapability(cap, null))
         if (genericValid.nonEmpty) {
             holder.generic = MultipartCapRegistry.merge(cap, genericValid.map(_.getCapability(cap, null).asInstanceOf[Object]))
         }
         for (side <- EnumFacing.VALUES) {
-            val sidedValid = capParts.filter(_.hasCapability(cap, side))
+            val sidedValid = capParts.asScala.filter(_.hasCapability(cap, side))
             if (sidedValid.nonEmpty) {
                 holder.sided += side -> MultipartCapRegistry.merge(cap, sidedValid.map(_.getCapability(cap, side).asInstanceOf[Object]))
             }
@@ -574,7 +574,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
         }
     }
 
-    override final def hasCapability(capability: Capability[_], facing: EnumFacing) = {
+    override final def hasCapability(capability: Capability[?], facing: EnumFacing): Boolean = {
         calculateCap(capability)
         capMap.get(capability) match {
             case Some(holder) => (facing == null && holder.generic != null) || (facing != null && holder.sided.contains(facing))
@@ -604,7 +604,7 @@ trait TileMultipartClient extends TileMultipart {
 
     def renderStatic(pos: Vector3, layer: BlockRenderLayer, ccrs: CCRenderState) = partList.count(_.renderStatic(pos, layer, ccrs)) > 0
 
-    def renderDamage(pos: Vector3, texture: TextureAtlasSprite, ccrs: CCRenderState) {
+    def renderDamage(pos: Vector3, texture: TextureAtlasSprite, ccrs: CCRenderState): Unit = {
         Minecraft.getMinecraft.objectMouseOver match {
             case hit: PartRayTraceResult if partList.isDefinedAt(hit.partIndex) =>
                 partList(hit.partIndex).renderBreaking(pos, texture, ccrs)
@@ -612,7 +612,7 @@ trait TileMultipartClient extends TileMultipart {
         }
     }
 
-    def randomDisplayTick(random: Random) {}
+    def randomDisplayTick(random: Random): Unit = {}
 
     def drawHighlight(player: EntityPlayer, hit: PartRayTraceResult, frame: Float): Boolean =
         partList(hit.partIndex) match {
@@ -624,14 +624,14 @@ trait TileMultipartClient extends TileMultipart {
                 true
         }
 
-    def addHitEffects(hit: PartRayTraceResult, manager: ParticleManager) {
+    def addHitEffects(hit: PartRayTraceResult, manager: ParticleManager): Unit = {
         partList(hit.partIndex) match {
             case null =>
             case part => part.addHitEffects(hit, manager)
         }
     }
 
-    def addDestroyEffects(hit: PartRayTraceResult, manager: ParticleManager) {
+    def addDestroyEffects(hit: PartRayTraceResult, manager: ParticleManager): Unit = {
         partList(hit.partIndex) match {
             case null =>
             case part => part.addDestroyEffects(hit, manager)
@@ -646,7 +646,7 @@ object TileMultipart {
     /**
      * Gets a multipart tile instance at pos, converting if necessary.
      */
-    def getOrConvertTile(world: World, pos: BlockPos) = getOrConvertTile2(world, pos)._1
+    def getOrConvertTile(world: World, pos: BlockPos): TileMultipart = getOrConvertTile2(world, pos)._1
 
     /**
      * Gets a multipart tile instance at pos, converting if necessary.
@@ -657,16 +657,18 @@ object TileMultipart {
      */
     def getOrConvertTile2(world: World, pos: BlockPos): (TileMultipart, Boolean) = {
         val t = world.getTileEntity(pos)
-        if (t.isInstanceOf[TileMultipart]) {
-            return (t.asInstanceOf[TileMultipart], false)
+        t match {
+            case multipart: TileMultipart =>
+                return (multipart, false)
+            case _ =>
         }
 
         val p = MultiPartRegistry.convertBlock(world, pos, world.getBlockState(pos))
-        if (p.nonEmpty) {
-            val t = MultipartGenerator.generateCompositeTile(null, p, world.isRemote)
+        if (p.asScala.nonEmpty) {
+            val t = MultipartGenerator.generateCompositeTile(null, p.asScala, world.isRemote)
             t.setPos(pos)
             t.setWorld(world)
-            p.foreach(t.addPart_do)
+            p.asScala.foreach(t.addPart_do)
             return (t, true)
         }
         (null, false)
@@ -675,14 +677,14 @@ object TileMultipart {
     /**
      * Gets the multipart tile instance at pos, or null if it doesn't exist or is not a multipart tile
      */
-    def getTile(world: World, pos: BlockPos) =
+    def getTile(world: World, pos: BlockPos): TileMultipart =
         world.getTileEntity(pos) match {
             case t: TileMultipart => t
             case _ => null
         }
 
-    def checkNoEntityCollision(world: World, pos: BlockPos, part: TMultiPart) =
-        part.getCollisionBoxes.forall(b => world.checkNoEntityCollision(b.aabb.offset(pos)))
+    def checkNoEntityCollision(world: World, pos: BlockPos, part: TMultiPart): Boolean =
+        part.getCollisionBoxes.asScala.forall(b => world.checkNoEntityCollision(b.aabb.offset(pos)))
 
     /**
      * Returns whether part can be added to the space at pos. Will do conversions as necessary.
@@ -726,7 +728,7 @@ object TileMultipart {
     /**
      * Constructs this tile and its parts from a desc packet
      */
-    def handleDescPacket(world: World, pos: BlockPos, packet: PacketCustom) {
+    def handleDescPacket(world: World, pos: BlockPos, packet: PacketCustom): Unit = {
         val nparts = packet.readUByte
         val parts = new ListBuffer[TMultiPart]()
         for (i <- 0 until nparts) {
@@ -752,7 +754,7 @@ object TileMultipart {
     /**
      * Handles an update packet, addition, removal and otherwise
      */
-    def handlePacket(pos: BlockPos, world: World, i: Int, packet: PacketCustom) {
+    def handlePacket(pos: BlockPos, world: World, i: Int, packet: PacketCustom): Unit = {
         def tilemp = TileCache.findTile(world, pos)
 
         i match {
@@ -794,7 +796,7 @@ object TileMultipart {
      * Drops an item around pos
      */
     //TODO CCL
-    def dropItem(stack: ItemStack, world: World, pos: Vector3) {
+    def dropItem(stack: ItemStack, world: World, pos: Vector3): Unit = {
         val item = new EntityItem(world, pos.x, pos.y, pos.z, stack)
         item.motionX = world.rand.nextGaussian() * 0.05
         item.motionY = world.rand.nextGaussian() * 0.05 + 0.2

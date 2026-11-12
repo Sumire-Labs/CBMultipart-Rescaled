@@ -2,7 +2,8 @@ package codechicken.multipart
 
 import codechicken.lib.data.{MCDataInput, MCDataOutput}
 
-import scala.collection.mutable.{Map => MMap}
+import scala.collection.mutable
+import scala.collection.mutable.Map as MMap
 
 /**
  * Static class for packing update data.
@@ -11,12 +12,12 @@ import scala.collection.mutable.{Map => MMap}
  * This prevents sending multiple packets if the same property updates more than once per tick.
  */
 object PacketScheduler {
-    private val map = MMap[TMultiPart, Long]()
+    private val map = mutable.Map[TMultiPart, Long]()
 
     /**
      * Add bits to the current update mask for part. (binary OR)
      */
-    def schedulePacket(part: TMultiPart, mask: Long) {
+    def schedulePacket(part: TMultiPart, mask: Long): Unit = {
         if (part.world.isRemote) {
             throw new IllegalArgumentException("Cannot use PacketScheduler on a client world")
         }
@@ -24,7 +25,7 @@ object PacketScheduler {
         map.put(part, map.getOrElse(part, 0L) | mask)
     }
 
-    private[multipart] def sendScheduled() {
+    private[multipart] def sendScheduled(): Unit = {
         map.foreach { e =>
             val (part, mask) = e
             if (part.tile != null) {
@@ -51,7 +52,7 @@ trait IScheduledPacketPart {
     /**
      * Write scheduled data to the packet, mask is the cumulative mask from calls to schedulePacket
      */
-    def writeScheduled(mask: Long, packet: MCDataOutput)
+    def writeScheduled(mask: Long, packet: MCDataOutput): Unit
 
     /**
      * Returns the width (in bytes) of the data type required to hold all valid mask bits. Valid values are 1, 2, 4 and 8
@@ -61,12 +62,12 @@ trait IScheduledPacketPart {
     /**
      * Read data matching mask. Estiablishes a method for subclasses to override. This should be called from read
      */
-    def readScheduled(mask: Long, packet: MCDataInput)
+    def readScheduled(mask: Long, packet: MCDataInput): Unit
 }
 
 trait TScheduledPacketPart extends TMultiPart with IScheduledPacketPart {
-    final override def read(packet: MCDataInput) {
-        val mask = maskWidth match {
+    final override def read(packet: MCDataInput): Unit = {
+        val mask: Long = maskWidth match {
             case 1 => packet.readUByte
             case 2 => packet.readUShort
             case 4 => packet.readInt
@@ -75,7 +76,7 @@ trait TScheduledPacketPart extends TMultiPart with IScheduledPacketPart {
         readScheduled(mask, packet)
     }
 
-    def writeScheduled(mask: Long, packet: MCDataOutput) {}
+    def writeScheduled(mask: Long, packet: MCDataOutput): Unit = {}
 
-    def readScheduled(mask: Long, packet: MCDataInput) {}
+    def readScheduled(mask: Long, packet: MCDataInput): Unit = {}
 }

@@ -8,9 +8,9 @@ import net.minecraft.entity.player.EntityPlayer
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
 import net.minecraftforge.fml.common.gameevent.TickEvent.ClientTickEvent
 import net.minecraftforge.fml.relauncher.{Side, SideOnly}
-import org.lwjgl.input.Keyboard
+import org.lwjgl.input.KeyboardConstants
 
-import scala.collection.mutable.{HashMap => MHashMap}
+import scala.collection.mutable.{WeakHashMap => MHashMap}
 
 /**
  * A class that maintains a map server<->client of which players are holding the control (or placement modifier key) much like sneaking.
@@ -33,7 +33,7 @@ object ControlKeyModifer {
 /**
  * Key Handler implementation
  */
-object ControlKeyHandler extends KeyBinding("key.control", Keyboard.KEY_LCONTROL, "key.categories.gameplay") {
+object ControlKeyHandler extends KeyBinding("key.control", KeyboardConstants.KEY_LCONTROL, "key.categories.gameplay") {
 
     import ControlKeyModifer._
 
@@ -41,7 +41,7 @@ object ControlKeyHandler extends KeyBinding("key.control", Keyboard.KEY_LCONTROL
 
     @SubscribeEvent
     @SideOnly(Side.CLIENT)
-    def tick(event: ClientTickEvent) {
+    def tick(event: ClientTickEvent): Unit = {
         val pressed = isKeyDown
         if (pressed != wasPressed) {
             wasPressed = pressed

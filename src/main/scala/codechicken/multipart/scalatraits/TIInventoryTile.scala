@@ -9,14 +9,14 @@ import net.minecraft.item.ItemStack
 import net.minecraft.util.EnumFacing
 import net.minecraft.util.text.TextComponentString
 
-import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 import scala.collection.mutable.ArrayBuffer
 
 trait TIInventoryTile extends TileMultipart with ISidedInventory {
     var invList = new JLinkedList[IInventory]()
     var slotMap = Array[(IInventory, Int)]()
 
-    override def copyFrom(that: TileMultipart) {
+    override def copyFrom(that: TileMultipart): Unit = {
         super.copyFrom(that)
         if (that.isInstanceOf[TIInventoryTile]) {
             invList = that.asInstanceOf[TIInventoryTile].invList
@@ -24,45 +24,38 @@ trait TIInventoryTile extends TileMultipart with ISidedInventory {
         }
     }
 
-    override def bindPart(part: TMultiPart) {
+    override def bindPart(part: TMultiPart): Unit = {
         super.bindPart(part)
         if (part.isInstanceOf[IInventory]) {
-            invList += part.asInstanceOf[IInventory]
+            invList.asScala += part.asInstanceOf[IInventory]
             rebuildSlotMap()
         }
     }
 
-    override def partRemoved(part: TMultiPart, p: Int) {
+    override def partRemoved(part: TMultiPart, p: Int): Unit = {
         super.partRemoved(part, p)
         if (part.isInstanceOf[IInventory]) {
-            invList -= part.asInstanceOf[IInventory]
+            invList.asScala -= part.asInstanceOf[IInventory]
             rebuildSlotMap()
         }
     }
 
-    override def clearParts() {
+    override def clearParts(): Unit = {
         super.clearParts()
         invList.clear()
         slotMap = Array()
     }
 
-    def rebuildSlotMap() {
-        slotMap = Array.ofDim(invList.map(_.getSizeInventory).sum)
+    def rebuildSlotMap(): Unit = {
+        slotMap = Array.ofDim(invList.asScala.map(_.getSizeInventory).sum)
         var i = 0
-        for (inv <- invList; s <- 0 until inv.getSizeInventory) {
+        for (inv <- invList.asScala; s <- 0 until inv.getSizeInventory) {
             slotMap(i) = (inv, s)
             i += 1
         }
     }
 
-    override def isEmpty = {
-        for ((inv, slot) <- slotMap) {
-            if (!inv.getStackInSlot(slot).isEmpty) {
-                false
-            }
-        }
-        true
-    }
+    override def isEmpty: Boolean = slotMap.forall { case (inv, slot) => inv.getStackInSlot(slot).isEmpty }
 
     override def getName = "Multipart Inventory"
 
@@ -96,9 +89,9 @@ trait TIInventoryTile extends TileMultipart with ISidedInventory {
 
     override def isUsableByPlayer(player: EntityPlayer) = true
 
-    override def openInventory(player: EntityPlayer) {}
+    override def openInventory(player: EntityPlayer): Unit = {}
 
-    override def closeInventory(player: EntityPlayer) {}
+    override def closeInventory(player: EntityPlayer): Unit = {}
 
     override def isItemValidForSlot(i: Int, itemstack: ItemStack) = {
         val (inv, slot) = slotMap(i)
@@ -107,18 +100,18 @@ trait TIInventoryTile extends TileMultipart with ISidedInventory {
 
     override def getField(id: Int) = 0
 
-    override def setField(id: Int, value: Int) {}
+    override def setField(id: Int, value: Int): Unit = {}
 
     override def getFieldCount = 0
 
-    override def clear() {
-        for (inv <- invList) inv.clear()
+    override def clear(): Unit = {
+        for (inv <- invList.asScala) inv.clear()
     }
 
     override def getSlotsForFace(side: EnumFacing) = {
         val buf = new ArrayBuffer[Int]()
         var base = 0
-        for (inv <- invList) {
+        for (inv <- invList.asScala) {
             inv match {
                 case is: ISidedInventory => buf ++= is.getSlotsForFace(side).map(_ + base)
                 case _ =>

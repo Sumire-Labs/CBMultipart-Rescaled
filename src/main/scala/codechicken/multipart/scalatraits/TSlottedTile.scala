@@ -9,7 +9,7 @@ import codechicken.multipart.{TMultiPart, TSlottedPart, TileMultipart}
 trait TSlottedTile extends TileMultipart {
     var v_partMap = new Array[TMultiPart](27)
 
-    override def copyFrom(that: TileMultipart) {
+    override def copyFrom(that: TileMultipart): Unit = {
         super.copyFrom(that)
         if (that.isInstanceOf[TSlottedTile]) {
             v_partMap = that.asInstanceOf[TSlottedTile].v_partMap
@@ -18,13 +18,13 @@ trait TSlottedTile extends TileMultipart {
 
     override def partMap(slot: Int) = v_partMap(slot)
 
-    override def clearParts() {
+    override def clearParts(): Unit = {
         super.clearParts()
         for (i <- 0 until v_partMap.length)
             v_partMap(i) = null
     }
 
-    override def partRemoved(part: TMultiPart, p: Int) {
+    override def partRemoved(part: TMultiPart, p: Int): Unit = {
         super.partRemoved(part, p)
         if (part.isInstanceOf[TSlottedPart]) {
             for (i <- 0 until 27)
@@ -35,18 +35,16 @@ trait TSlottedTile extends TileMultipart {
     }
 
     override def canAddPart(part: TMultiPart): Boolean = {
-        if (part.isInstanceOf[TSlottedPart]) {
+        val slotsAvailable = !part.isInstanceOf[TSlottedPart] || {
             val slotMask = part.asInstanceOf[TSlottedPart].getSlotMask
-            for (i <- 0 until v_partMap.length)
-                if ((slotMask & 1 << i) != 0 && partMap(i) != null) {
-                    return false
-                }
+            (0 until v_partMap.length).forall { i =>
+                (slotMask & 1 << i) == 0 || partMap(i) == null
+            }
         }
-
-        super.canAddPart(part)
+        slotsAvailable && super.canAddPart(part)
     }
 
-    override def bindPart(part: TMultiPart) {
+    override def bindPart(part: TMultiPart): Unit = {
         super.bindPart(part)
         if (part.isInstanceOf[TSlottedPart]) {
             val mask = part.asInstanceOf[TSlottedPart].getSlotMask

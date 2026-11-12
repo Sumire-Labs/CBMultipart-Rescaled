@@ -28,27 +28,25 @@ import scala.collection.mutable
 class MicroblockProxy_serverImpl {
     var logger: Logger = LogManager.getLogger("ForgeMicroBlockCBE")
 
-    var microTab = new SimpleCreativeTab("microblockcbe", new Supplier[ItemStack] {
-        override def get(): ItemStack = ItemMicroPart.create(0, 1, BlockMicroMaterial.materialKey(Blocks.STONE.getDefaultState))
-    })
+    var microTab = new SimpleCreativeTab("microblockcbe", () => ItemMicroPart.create(0, 1, BlockMicroMaterial.materialKey(Blocks.STONE.getDefaultState)))
 
-    var itemMicro: ItemMicroPart = _
-    var sawStone: Item = _
-    var sawIron: Item = _
-    var sawDiamond: Item = _
-    var stoneRod: Item = _
+    var itemMicro: ItemMicroPart = scala.compiletime.uninitialized
+    var sawStone: Item = scala.compiletime.uninitialized
+    var sawIron: Item = scala.compiletime.uninitialized
+    var sawDiamond: Item = scala.compiletime.uninitialized
+    var stoneRod: Item = scala.compiletime.uninitialized
 
-    var useSawIcons: Boolean = _
-    var showAllMicroparts:Boolean = _
+    var useSawIcons: Boolean = scala.compiletime.uninitialized
+    var showAllMicroparts:Boolean = scala.compiletime.uninitialized
 
-    def preInit() {
+    def preInit(): Unit = {
         itemMicro = new ItemMicroPart
         ForgeRegistries.ITEMS.register(itemMicro.setRegistryName("microblock"))
         itemMicro.setCreativeTab(microTab)
         sawStone = createSaw(config, "saw_stone", 1)
         sawIron = createSaw(config, "saw_iron", 2)
         sawDiamond = createSaw(config, "saw_diamond", 3)
-        stoneRod = new Item().setUnlocalizedName("microblockcbe:stone_rod").setCreativeTab(CreativeTabs.MATERIALS)
+        stoneRod = new Item().setTranslationKey("microblockcbe:stone_rod").setCreativeTab(CreativeTabs.MATERIALS)
         ForgeRegistries.ITEMS.register(stoneRod.setRegistryName("stone_rod"))
 
         OreDictionary.registerOre("rodStone", stoneRod)
@@ -59,17 +57,17 @@ class MicroblockProxy_serverImpl {
         showAllMicroparts = config.getTag("showAllMicroparts").setComment("Set this to true to show all MicroParts in JEI. By default only Stone is shown.").getBooleanValue(false)
     }
 
-    protected var saws = mutable.MutableList[Item]()
+    protected var saws = mutable.ListBuffer[Item]()
 
-    def createSaw(config: ConfigFile, name: String, strength: Int) = {
+    def createSaw(config: ConfigFile, name: String, strength: Int): ItemSaw = {
         val saw = new ItemSaw(config.getTag(name).useBraces(), strength)
-            .setUnlocalizedName("microblockcbe:" + name)
+        saw.setTranslationKey("microblockcbe:" + name)
         ForgeRegistries.ITEMS.register(saw.setRegistryName(name))
         saws += saw
         saw
     }
 
-    def addSawRecipe(saw: Item, blade: Item) {
+    def addSawRecipe(saw: Item, blade: Item): Unit = {
         //        CraftingManager.getInstance.getRecipeList.add(
         //            new ShapedOreRecipe(new ItemStack(saw),
         //                "srr",
@@ -79,11 +77,11 @@ class MicroblockProxy_serverImpl {
         //                'b': Character, blade))
     }
 
-    def registerRecipes(registry: IForgeRegistry[IRecipe]) {
+    def registerRecipes(registry: IForgeRegistry[IRecipe]): Unit = {
         registry.register(MicroRecipe.setRegistryName("micro_recipe"))
     }
 
-    def init() {
+    def init(): Unit = {
         //        CraftingManager.getInstance.getRecipeList.add(MicroRecipe)
         //        CraftingManager.getInstance.addRecipe(new ItemStack(stoneRod, 4), "s", "s", 's': Character, Blocks.STONE)
         //        addSawRecipe(sawStone, Items.FLINT)
@@ -91,7 +89,7 @@ class MicroblockProxy_serverImpl {
         //        addSawRecipe(sawDiamond, Items.DIAMOND)
     }
 
-    def postInit() {
+    def postInit(): Unit = {
         MicroMaterialRegistry.calcMaxCuttingStrength()
         PacketCustom.assignHandshakeHandler(MicroblockSPH.registryChannel, MicroblockSPH)
     }
@@ -99,7 +97,7 @@ class MicroblockProxy_serverImpl {
 
 class MicroblockProxy_clientImpl extends MicroblockProxy_serverImpl {
     @SideOnly(Side.CLIENT)
-    override def preInit() {
+    override def preInit(): Unit = {
         super.preInit()
 
         ModelRegistryHelper.registerItemRenderer(itemMicro, ItemMicroPartRenderer)
@@ -109,9 +107,9 @@ class MicroblockProxy_clientImpl extends MicroblockProxy_serverImpl {
     }
 
     @SideOnly(Side.CLIENT)
-    def registerFMPItemModel(item: Item) {
+    def registerFMPItemModel(item: Item): Unit = {
         val loc = item.getRegistryName
-        val mLoc = new ModelResourceLocation("microblockcbe:items", s"type=${loc.getResourcePath}")
+        val mLoc = new ModelResourceLocation("microblockcbe:items", s"type=${loc.getPath}")
         ModelLoader.setCustomModelResourceLocation(item, 0, mLoc)
         ModelLoader.setCustomMeshDefinition(item, new ItemMeshDefinition {
             override def getModelLocation(stack: ItemStack) = mLoc
@@ -119,7 +117,7 @@ class MicroblockProxy_clientImpl extends MicroblockProxy_serverImpl {
     }
 
     @SideOnly(Side.CLIENT)
-    override def postInit() {
+    override def postInit(): Unit = {
         super.postInit()
         PacketCustom.assignHandler(MicroblockCPH.registryChannel, MicroblockCPH)
     }
