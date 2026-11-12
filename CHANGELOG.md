@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.1.1 - 2026-11-13
+
+### Added
+
+- Add the CBMultipart Rescaled icon to all three mod entries.
+
+### Changed
+
+- Update the README with changes, requirements and links to dependencies and forks.
+- Enable Maven, CurseForge and Modrinth uploads for tagged releases. Include
+  dependency and incompatibility information on CurseForge and Modrinth.
+
 ## 3.1.0 - 2026-11-12
 
 ### Added
