@@ -24,4 +24,4 @@ codechicken:CBMultipart-Rescaled:<version>
 
 [LGPL-2.1](LICENSE.md)
 
-Includes fixes from TheCBProject, kappa-maintainer, and ACGaming's forks.
+Includes fixes from TheCBProject, kappa-maintainer, ACGaming, and GTNewHorizons' forks.
