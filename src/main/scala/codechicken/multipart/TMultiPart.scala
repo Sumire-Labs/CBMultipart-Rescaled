@@ -90,7 +90,7 @@ abstract class TMultiPart {
      * Quick and easy method to re-describe the whole part on the client. This will call read on the client which calls readDesc unless overriden.
      * Incremental changes should be sent rather than the whole description packet if possible.
      */
-    def sendDescUpdate() = writeDesc(getWriteStream)
+    def sendDescUpdate(): Unit = if (tile != null) writeDesc(getWriteStream)
 
     /**
      * Perform an occlusion test to determine whether this and npart can 'fit' in this block space.

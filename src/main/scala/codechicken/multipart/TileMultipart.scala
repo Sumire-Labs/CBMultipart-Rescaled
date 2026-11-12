@@ -132,7 +132,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
         val it = partList.iterator
         while (it.hasNext) {
             val p = it.next()
-            if (p.tile != null) f(p)
+            if (p.tile eq this) f(p)
         }
     }
 
@@ -388,7 +388,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
 
     def getExplosionResistance(entity: Entity): Float = partList.view.map(_.getExplosionResistance(entity)).max
 
-    def getLightValue: Int = partList.view.map(_.getLightValue).max
+    def getLightValue: Int = partList.iterator.map(_.getLightValue).foldLeft(0)(Math.max)
 
     def getPlayerRelativeBlockHardness(player: EntityPlayer, hit: PartRayTraceResult): Float = {
         if (hit == null) return 1 / 100F

@@ -55,7 +55,7 @@ trait TTickableTile extends TileMultipart with ITickable {
         val it = tickingParts.iterator
         while (it.hasNext) {
             val p = it.next()
-            if (p.tile != null) p.update()
+            if (p.tile eq this) p.update()
         }
     }
 
