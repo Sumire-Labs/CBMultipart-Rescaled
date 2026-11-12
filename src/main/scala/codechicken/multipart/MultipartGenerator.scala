@@ -67,7 +67,9 @@ object MultipartGenerator extends ScratchBitSet {
      * returns true if tile was replaced
      */
     private[multipart] def addPart(world: World, pos: BlockPos, part: TMultiPart): TileMultipart = {
-        val (tile, converted) = TileMultipart.getOrConvertTile2(world, pos)
+        val (tile, converted) =
+            if (world.isRemote) (BlockMultipart.getTile(world, pos), false)
+            else TileMultipart.getOrConvertTile2(world, pos)
         val bitset = setTraits(part, world.isRemote)
 
         var ntile = tile
