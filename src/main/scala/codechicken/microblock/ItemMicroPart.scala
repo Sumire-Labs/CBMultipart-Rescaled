@@ -44,7 +44,7 @@ class ItemMicroPart extends Item {
                 val factory = factories(factoryID)
                 if (factory != null) {
                     for (size <- Seq(1, 2, 4))
-                        MicroMaterialRegistry.getIdMap.foreach(e => list.add(create(factoryID, size, e._1)))
+                        MicroMaterialRegistry.getIdMap.filterNot(_._2 == MissingMicroMaterial).foreach(e => list.add(create(factoryID, size, e._1)))
                 }
             }
         }
@@ -55,7 +55,7 @@ class ItemMicroPart extends Item {
         val material = getMaterialID(stack)
         val mcrFactory = getFactory(stack)
         val size = getSize(stack)
-        if (material < 0 || mcrFactory == null) {
+        if (material < 0 || mcrFactory == null || MicroMaterialRegistry.getMaterial(material) == MissingMicroMaterial) {
             return EnumActionResult.FAIL
         }
 
@@ -137,7 +137,7 @@ object ItemMicroPart {
     def getMaterialID(stack: ItemStack): Int = {
         checkTagCompound(stack)
         if (!stack.getTagCompound.hasKey("mat")) {
-            return 0
+            return MicroMaterialRegistry.materialID(MissingMicroMaterial.getMaterialID)
         }
 
         MicroMaterialRegistry.materialID(stack.getTagCompound.getString("mat"))
@@ -149,7 +149,7 @@ object ItemMicroPart {
             return null
         }
 
-        MicroMaterialRegistry.getMaterial(stack.getTagCompound.getString("mat"))
+        Option(MicroMaterialRegistry.getMaterial(stack.getTagCompound.getString("mat"))).getOrElse(MissingMicroMaterial)
     }
 }
 

@@ -23,6 +23,11 @@ import scala.util.boundary
 
 abstract class Microblock(var material: Int = 0) extends TMultiPart with TCuboidPart {
     var shape: Byte = 0
+    private var missingMaterialName: Option[String] = None
+
+    private def savedMaterialName: String =
+        if (getIMaterial == MissingMicroMaterial) missingMaterialName.getOrElse(materialName(material))
+        else materialName(material)
 
     def microFactory: MicroblockFactory
 
@@ -64,7 +69,7 @@ abstract class Microblock(var material: Int = 0) extends TMultiPart with TCuboid
             val m = size / s
             size -= m * s
             if (m > 0) {
-                items += ItemMicroPart.createStack(m, ItemMicroPart.damage(itemFactoryID, s), MicroMaterialRegistry.materialName(material))
+                items += ItemMicroPart.createStack(m, ItemMicroPart.damage(itemFactoryID, s), savedMaterialName)
             }
         }
         items.asJava
@@ -75,7 +80,7 @@ abstract class Microblock(var material: Int = 0) extends TMultiPart with TCuboid
             val size = getSize
             for (s <- Seq(4, 2, 1))
                 if (size % s == 0 && size / s >= 1) {
-                    boundary.break(ItemMicroPart.create(itemFactoryID, size, MicroMaterialRegistry.materialName(material)))
+                    boundary.break(ItemMicroPart.create(itemFactoryID, size, savedMaterialName))
                 }
 
             null //unreachable
@@ -102,12 +107,14 @@ abstract class Microblock(var material: Int = 0) extends TMultiPart with TCuboid
 
     override def save(tag: NBTTagCompound): Unit = {
         tag.setByte("shape", shape)
-        tag.setString("material", materialName(material))
+        tag.setString("material", savedMaterialName)
     }
 
     override def load(tag: NBTTagCompound): Unit = {
         shape = tag.getByte("shape")
-        material = materialID(tag.getString("material"))
+        val originalName = tag.getString("material")
+        material = materialID(originalName)
+        missingMaterialName = if (getIMaterial == MissingMicroMaterial) Some(originalName) else None
     }
 
     def isTransparent: Boolean = getIMaterial.isTransparent

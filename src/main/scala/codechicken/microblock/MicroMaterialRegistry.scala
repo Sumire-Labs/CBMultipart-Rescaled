@@ -110,16 +110,24 @@ trait IMicroHighlightRenderer {
 
 object MicroMaterialRegistry {
     private val typeMap = MHashMap[String, IMicroMaterial]()
-    private val nameMap = MHashMap[String, Int]()
-    private var idMap: Array[(String, IMicroMaterial)] = scala.compiletime.uninitialized
-    private val idWriter = new IDWriter
+    private case class MaterialMap(entries: Array[(String, IMicroMaterial)], names: Map[String, Int], writer: IDWriter, missingId: Int)
+    @volatile private var materialMap: MaterialMap = null
+
+    private def buildMap(entries: Array[(String, IMicroMaterial)]): MaterialMap = {
+        val names = entries.indices.map(i => entries(i)._1 -> i).toMap
+        val writer = new IDWriter
+        writer.setMax(entries.length)
+        val missingId = names.getOrElse(MissingMicroMaterial.getMaterialID,
+            throw new IllegalStateException("Missing microblock material placeholder is not registered"))
+        MaterialMap(entries, names, writer, missingId)
+    }
 
     private val highlightRenderers = ListBuffer[IMicroHighlightRenderer]()
     private var maxCuttingStrength: Int = scala.compiletime.uninitialized
 
     private val remap = MHashMap[String, String]()
 
-    private var iconsLoaded = false
+    @volatile private var iconsLoaded = false
 
     /**
      * Register a micro material with unique identifier name
@@ -166,11 +174,8 @@ object MicroMaterialRegistry {
     def remapName(oldName: String, newName: String): Unit = remap.put(oldName, newName)
 
     private[microblock] def setupIDMap(): Unit = {
-        idMap = typeMap.toList.sortBy(_._2).toArray
-        idWriter.setMax(idMap.length)
-        nameMap.clear()
-        for (i <- idMap.indices)
-            nameMap.put(idMap(i)._1, i)
+        val materials = typeMap.toList.filterNot(_._1 == MissingMicroMaterial.getMaterialID).sortBy(_._2)
+        materialMap = buildMap((materials :+ (MissingMicroMaterial.getMaterialID -> MissingMicroMaterial)).toArray)
     }
 
     private[microblock] def calcMaxCuttingStrength(): Unit = {
@@ -181,31 +186,33 @@ object MicroMaterialRegistry {
         }.max
     }
 
-    def markIconReload(): Unit = {
+    def markIconReload(): Unit = synchronized {
         iconsLoaded = false
     }
 
     private[microblock] def loadIcons(): Unit = {
-        if (!iconsLoaded) {
-            if (idMap != null) {
-                idMap.foreach(e => e._2.loadIcons())
+        if (!iconsLoaded) synchronized {
+            if (!iconsLoaded) {
+                val current = materialMap
+                if (current != null) {
+                    current.entries.foreach(e => e._2.loadIcons())
+                    iconsLoaded = true
+                }
             }
-            iconsLoaded = true
         }
     }
 
     def getMaxCuttingStrength = maxCuttingStrength
 
     def writeIDMap(packet: PacketCustom): Unit = {
-        packet.writeInt(idMap.length)
-        idMap.foreach(e => packet.writeString(e._1))
+        val current = materialMap
+        packet.writeInt(current.entries.length)
+        current.entries.foreach(e => packet.writeString(e._1))
     }
 
     def readIDMap(packet: PacketCustom): Seq[String] = {
         val k = packet.readInt()
-        idWriter.setMax(k)
-        idMap = new Array(k)
-        nameMap.clear()
+        val entries = new Array[(String, IMicroMaterial)](k)
         val missing = ListBuffer[String]()
         for (i <- 0 until k) {
             val s = packet.readString()
@@ -213,34 +220,43 @@ object MicroMaterialRegistry {
             if (v.isEmpty) {
                 missing += s
             } else {
-                idMap(i) = (s, v.get)
-                nameMap.put(s, i)
+                entries(i) = (s, v.get)
             }
         }
 
+        // Publish entries, lookup and wire encoding together, after full validation.
+        if (missing.isEmpty && !entries.exists(_._1 == MissingMicroMaterial.getMaterialID))
+            missing += MissingMicroMaterial.getMaterialID
+        if (missing.isEmpty) materialMap = buildMap(entries)
         missing.toSeq
     }
 
     def writeMaterialID(data: MCDataOutput, id: Int): Unit = {
-        idWriter.write(data, id)
+        materialMap.writer.write(data, id)
     }
 
-    def readMaterialID(data: MCDataInput) = idWriter.read(data)
+    def readMaterialID(data: MCDataInput) = materialMap.writer.read(data)
 
-    def materialName(id: Int) = idMap(id)._1
+    def materialName(id: Int) = materialMap.entries(id)._1
 
-    def materialID(name: String) = nameMap.get(remap.getOrElse(name, name)) match {
-        case Some(v) => v
-        case None =>
-            logger.error("Missing mapping for part with ID: " + name)
-            0
+    def materialID(name: String): Int = {
+        val current = materialMap
+        current.names.get(remap.getOrElse(name, name)) match {
+            case Some(v) => v
+            case None =>
+                logger.error("Missing mapping for part with ID: " + name)
+                current.missingId
+        }
     }
 
     def getMaterial(name: String) = typeMap.getOrElse(remap.getOrElse(name, name), null)
 
-    def getMaterial(id: Int) = if (idMap != null && idMap.isDefinedAt(id)) idMap(id)._2 else null
+    def getMaterial(id: Int): IMicroMaterial = {
+        val current = materialMap
+        if (current != null && current.entries.isDefinedAt(id)) current.entries(id)._2 else null
+    }
 
-    def getIdMap = idMap
+    def getIdMap = if (materialMap == null) null else materialMap.entries
 
     def renderHighlight(player: EntityPlayer, hit: RayTraceResult, mcrClass: CommonMicroFactory, size: Int, material: Int): Boolean = {
         val overridden = highlightRenderers.find(_.renderHighlight(player, hit, mcrClass, size, material))

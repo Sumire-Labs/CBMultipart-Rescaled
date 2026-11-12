@@ -12,7 +12,7 @@ import scala.util.boundary
 import scala.util.boundary.break
 
 object MicroRecipe extends IForgeRegistryEntry.Impl[IRecipe] with IRecipe {
-    def getRecipeOutput = ItemMicroPart.create(1, 1, "tile.stone")
+    def getRecipeOutput = ItemMicroPart.create(1, 1, BlockMicroMaterial.materialKey(net.minecraft.init.Blocks.STONE))
 
     def getRecipeSize = 9
 
@@ -36,6 +36,8 @@ object MicroRecipe extends IForgeRegistryEntry.Impl[IRecipe] with IRecipe {
     }
 
     def create(amount: Int, factoryID: Int, size: Int, material: Int): ItemStack = {
+        val resolved = MicroMaterialRegistry.getMaterial(material)
+        if (resolved == null || resolved == MissingMicroMaterial) return ItemStack.EMPTY
         if (size == 8) {
             val item = MicroMaterialRegistry.getMaterial(material).getItem.copy
             item.setCount(amount)
@@ -149,6 +151,8 @@ object MicroRecipe extends IForgeRegistryEntry.Impl[IRecipe] with IRecipe {
     }
 
     def canCut(saw: Saw, sawItem: ItemStack, material: Int): Boolean = {
+        val resolved = MicroMaterialRegistry.getMaterial(material)
+        if (resolved == null || resolved == MissingMicroMaterial) return false
         val sawStrength = saw.getCuttingStrength(sawItem)
         val matStrength = MicroMaterialRegistry.getMaterial(material).getCutterStrength
         return sawStrength >= matStrength || sawStrength == MicroMaterialRegistry.getMaxCuttingStrength
@@ -185,7 +189,7 @@ object MicroRecipe extends IForgeRegistryEntry.Impl[IRecipe] with IRecipe {
     def findMaterial(item: ItemStack): Int =
         MicroMaterialRegistry.getIdMap.find { m =>
             val mitem = m._2.getItem
-            item.getItem == mitem.getItem &&
+            m._2 != MissingMicroMaterial && !mitem.isEmpty && item.getItem == mitem.getItem &&
                 item.getItemDamage == mitem.getItemDamage &&
                 ItemStack.areItemStackTagsEqual(item, mitem)
         } match {

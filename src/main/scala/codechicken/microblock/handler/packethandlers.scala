@@ -17,7 +17,8 @@ class MicroblockPH {
 object MicroblockCPH extends MicroblockPH with IClientPacketHandler {
     def handlePacket(packet: PacketCustom, mc: Minecraft, netHandler: INetHandlerPlayClient): Unit = {
         packet.getType match {
-            case 1 => handleMaterialRegistration(packet, netHandler)
+            // The integrated server and local client share this registry.
+            case 1 => if (!mc.isSingleplayer) handleMaterialRegistration(packet, netHandler)
         }
     }
 
