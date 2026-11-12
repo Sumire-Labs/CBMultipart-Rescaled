@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.1 - 2026-11-12
+## 3.1.0 - 2026-11-12
 
 - Port GTNH fixes for callbacks after tile replacement, detached part updates,
   empty-tile lighting, and stale client-side block conversion. Apply the tile
@@ -14,6 +14,10 @@
   nested render and exception cleanup. No shader mod is required to run the mod.
 - Add server and production-client regression tests, including Celeritas and
   Demonica scene rendering. Existing logic-tick/render separation is unchanged.
+
+## 3.0.1 - 2026-11-12
+
+- Initial distribution of the changes subsequently included in 3.1.0.
 
 ## 3.0.0 - 2026-11-12
 

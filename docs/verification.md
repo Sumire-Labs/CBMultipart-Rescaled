@@ -1,6 +1,6 @@
 # GTNH fixes and shader compatibility verification
 
-These changes ship in 3.0.1. The existing 3.0.0 tag and published artifacts are
+These changes ship in 3.1.0. The existing 3.0.0 and 3.0.1 tags and published artifacts are
 unchanged. Clients and servers must use the same updated build: the material
 handshake now includes the missing-material placeholder.
 
