@@ -10,6 +10,8 @@ import net.minecraft.util.ITickable
 import net.minecraft.util.ResourceLocation
 import net.minecraftforge.fml.common.{FMLCommonHandler, Mod}
 import net.minecraftforge.fml.common.event.FMLServerStartedEvent
+import net.minecraftforge.fml.common.event.FMLLoadCompleteEvent
+import net.minecraftforge.fml.common.event.FMLInitializationEvent
 import java.nio.file.{Files, Path}
 import java.util.BitSet
 
@@ -18,11 +20,24 @@ import java.util.BitSet
     dependencies = "required-after:microblockcbe")
 class ServerSmokeMod {
     @Mod.EventHandler
+    def init(event: FMLInitializationEvent): Unit = {
+        if (System.getProperty("cbmultipart.client.result") != null) {
+            Class.forName("codechicken.multipart.ClientSmokeChecks").getMethod("registerMaterials").invoke(null)
+        }
+    }
+    @Mod.EventHandler
+    def loaded(event: FMLLoadCompleteEvent): Unit = {
+        if (System.getProperty("cbmultipart.client.result") != null) {
+            Class.forName("codechicken.multipart.ClientSmokeChecks").getMethod("start").invoke(null)
+        }
+    }
+    @Mod.EventHandler
     def started(event: FMLServerStartedEvent): Unit = {
         val result = System.getProperty("cbmultipart.smoke.result")
         if (result == null) return
         val server = FMLCommonHandler.instance().getMinecraftServerInstance
         try {
+            GtnhRegressionChecks.run()
             val names = Seq("JTickableTile", "TSlottedTile", "JInventoryTile", "TPartialOcclusionTile",
                 "TRedstoneTile", "TTileChangeTile").map("codechicken.multipart.scalatraits." + _)
             val ids = names.map(name => MultipartMixinFactory.getId(name.replace('.', '/')))

@@ -13,6 +13,8 @@ curl --fail --location --retry 3 \
   --output "$server/installer.jar"
 java -jar "$server/installer.jar" server --version "$cleanroom_version" \
   --dir "$server" --no-provision-java --memory 2G --no-gui --yes
+# This is the isolated fixture above; remove older-version test jars on repeat runs.
+find "$server/mods" -maxdepth 1 -type f -name '*.jar' -delete
 cp "$repo"/build/production-smoke/mods/*.jar "$server/mods/"
 cd "$server"
 printf 'eula=true\n' > eula.txt

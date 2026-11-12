@@ -189,6 +189,29 @@ if (providers.gradleProperty("smoke_test").orElse("false").get().toBoolean()) {
         }
     }
 }
+if (providers.gradleProperty("client_smoke").orElse("false").get().toBoolean()) {
+    val clientDirectory = layout.projectDirectory.dir("run/smoke-client").asFile
+    val clientResult = layout.buildDirectory.file("verification/client-smoke.txt").get().asFile
+    val packResources = layout.projectDirectory.dir("src/test/resources/client").asFile
+    tasks.named<RunMinecraft>("runClient") {
+        timeout.set(Duration.ofMinutes(5))
+        dependsOn(tasks.testClasses)
+        classpath(sourceSets.test.get().output)
+        workingDir(clientDirectory)
+        systemProperty("cbmultipart.client.result", clientResult.absolutePath)
+        doFirst {
+            clientResult.parentFile.mkdirs()
+            clientResult.delete()
+            clientDirectory.mkdirs()
+            packResources.copyRecursively(clientDirectory, overwrite = true)
+        }
+        doLast {
+            check(clientResult.isFile && clientResult.readText().trim() == "PASS") {
+                "Client smoke tests did not complete; inspect run/smoke-client/logs/latest.log."
+            }
+        }
+    }
+}
 if (spotlessEnabled) {
     apply(plugin = "com.diffplug.spotless")
     configure<SpotlessExtension> {
@@ -272,7 +295,8 @@ val localPublishing = propertyFlag("publish_to_local_maven")
 val reobfJar = tasks.named<RenameJar>("reobfJar")
 val smokeJar = tasks.register<Jar>("smokeJar") {
     from(sourceSets.test.get().output)
-    include("codechicken/multipart/ServerSmokeMod*", "codechicken/multipart/SmokePassThrough*", "mcmod.info")
+    include("codechicken/multipart/ServerSmokeMod*", "codechicken/multipart/SmokePassThrough*",
+        "codechicken/multipart/GtnhRegressionChecks*", "codechicken/multipart/ClientSmokeChecks*", "mcmod.info")
     archiveClassifier.set("smoke-mcp")
     destinationDirectory.set(layout.buildDirectory.dir("smoke"))
 }
