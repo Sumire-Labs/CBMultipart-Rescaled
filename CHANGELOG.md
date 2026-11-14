@@ -1,60 +1,65 @@
 # Changelog
 
-## Unreleased
+This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-### Fixed
+## [Unreleased]
 
-- Keep converted parts and required tile traits when conversion callbacks remove
-  parts or replace the tile. Describe all converted parts before callbacks run.
-  ([upstream #112](https://github.com/TheCBProject/CBMultipart/issues/112))
-- Match vanilla and converted redstone parts' visual connection masks. Fix sided
-  block connections and limit Observer connections to its output face.
-  ([upstream #149](https://github.com/TheCBProject/CBMultipart/pull/149),
-  [#189](https://github.com/TheCBProject/CBMultipart/pull/189))
-- Keep client parts out of the server's random-tick scheduler.
-  ([upstream #149](https://github.com/TheCBProject/CBMultipart/pull/149))
-- Expose ordinary inventory slots to hoppers and sided item handlers while
-  preserving restrictions on sided inventories.
-- Read Scala 3 traits nested in objects from their enclosing TASTy files and
-  resolve their parent traits by JVM name.
-- Generate initialization setters for Scala 3 trait values and reserve enough
-  operand stack space for long and double field getters.
-- Restore saved ticks using the original part indices when unavailable part types
-  are skipped during loading, so ticks do not move to another part.
-- Keep newly loaded chunk schedules when callbacks change the active chunk set.
-- Discard queued part updates when their world unloads while keeping updates for
-  other worlds.
-- Cache lazy trait values after successful initialization and retry failed
-  initializers. Ignore enclosing TASTy files that do not define the requested class.
-- Send missing microblock materials' original names to clients so pick-block keeps
-  the saved material name.
-- Fix microblock description updates sending a material ID where the client
-  expects shape data.
-- Return zero explosion resistance for an empty multipart tile.
-- Keep the current part registry when a server's part list is rejected. Publish
-  accepted names, factories and ID encoding together, and skip the redundant
-  part-list update in singleplayer.
-- Restore scheduled ticks in their actual chunks, including part indices above
-  127. Resume loaded ticks, skip stale indices and keep the saved scheduler clock.
-- Allow parts to be added or removed during tick callbacks without crashing the
-  update loop. Newly added parts start ticking on the next tick.
-- Use World's deferred tile registration and removal when a multipart tile changes
-  class during a tick, avoiding changes to the list World is iterating.
-- Keep packet updates queued during a send for the next flush.
-- Read four-byte update masks without extending the sign bit into the upper
-  32 bits.
+## [3.1.2] - 2026-11-14
 
-Missing-material packets now include the original name. Use the same updated
-build on the client and server.
+### Changed
 
-### Development
-
-- Update the CleanroomDevEnv build setup: select runtime JARs for embedded
+- Include the original material name when synchronizing missing microblock materials.
+  Update both the client and server to this version.
+- Update the CleanroomDevEnv build setup to select runtime JARs for embedded
   libraries, replace tokens in renamed classes and check class constants for
   unresolved tokens.
 - Enable Spotless checks by default.
 
-## 3.1.1 - 2026-11-13
+### Fixed
+
+- Fix crashes and lost parts when conversion callbacks remove parts or replace
+  their tile. Send all converted parts to clients before running the callbacks,
+  and keep the tile traits required by newly placed parts.
+  ([upstream #112](https://github.com/TheCBProject/CBMultipart/issues/112))
+- Make vanilla and converted redstone parts use the same visual connection masks.
+  Fix the direction passed to sided blocks and restrict Observer connections to
+  its output face.
+  ([upstream #149](https://github.com/TheCBProject/CBMultipart/pull/149),
+  [#189](https://github.com/TheCBProject/CBMultipart/pull/189))
+- Stop client parts from entering the server's random-tick queue.
+  ([upstream #149](https://github.com/TheCBProject/CBMultipart/pull/149))
+- Let hoppers and sided item handlers access ordinary inventory parts. Keep the
+  access restrictions of sided inventories.
+- Restore scheduled ticks in the correct chunk, including part indices above
+  127. Resume loaded ticks, skip stale indices and preserve the saved scheduler
+  clock.
+- Keep saved ticks attached to their original parts when missing part types are
+  skipped during loading.
+- Keep tick schedules for chunks loaded during another part's tick callback.
+- Fix crashes when parts are added or removed during a tick. Start newly added
+  parts on the next tick and defer tile registration and removal through World
+  when a tile changes class.
+- Keep packet updates queued during a send for the next flush. Discard updates
+  for unloaded worlds without clearing updates for other worlds.
+- Read four-byte update masks without extending their sign bit into the upper
+  32 bits.
+- Preserve missing material names on clients so pick-block keeps the original
+  name.
+- Fix microblock description updates sending a material ID where the client
+  expects shape data.
+- Return zero explosion resistance for empty multipart tiles.
+- Validate server part lists before replacing the current registry. Replace
+  names, factories and ID encoding together, and skip the redundant part-list
+  update in singleplayer.
+- Read Scala 3 traits nested in objects from their enclosing TASTy files and
+  resolve parent traits by JVM name.
+- Initialize public and private trait values correctly. Fix invalid getter
+  bytecode for long and double fields.
+- Initialize lazy trait values once after a successful evaluation and retry failed
+  initializers. Ignore enclosing TASTy files that do not define the requested
+  class, such as those found while inspecting generated Java helpers.
+
+## [3.1.1] - 2026-11-13
 
 ### Added
 
@@ -66,19 +71,24 @@ build on the client and server.
 - Enable Maven, CurseForge and Modrinth uploads for tagged releases. Include
   dependency and incompatibility information on CurseForge and Modrinth.
 
-## 3.1.0 - 2026-11-12
+## [3.1.0] - 2026-11-12
 
 ### Added
 
-- Add optional Demonica support so terrain shaders can identify each microblock's original
-  block material.
+- Add optional Demonica support so terrain shaders can identify each microblock's
+  original block material.
+
+### Changed
+
+- Add server regression tests and client rendering checks with Celeritas and
+  Demonica. Logic ticks and rendering remain separate.
 
 ### Fixed
 
 - Stop old tiles from updating parts that have moved to another tile, including
   tick updates.
 - Fix a null-pointer crash when a detached part sends a description update.
-- Return zero light for an empty multipart block.
+- Return zero light for empty multipart blocks.
 - Fix extra block conversions when a client receives a part update while it still
   has an outdated block at that position.
 - Stop the singleplayer client from rebuilding the server's shared material list
@@ -91,16 +101,11 @@ build on the client and server.
 
 These fixes include changes from GTNH's ForgeMultipart fork.
 
-### Development
-
-- Add server regression tests and client rendering checks with Celeritas and
-  Demonica. Logic ticks and rendering remain separate.
-
-## 3.0.1 - 2026-11-12
+## [3.0.1] - 2026-11-12
 
 The mod changes are the same as [3.1.0](https://github.com/Sumire-Labs/CBMultipart-Rescaled/releases/tag/3.1.0).
 
-## 3.0.0 - 2026-11-12
+## [3.0.0] - 2026-11-12
 
 ### Changed
 
@@ -108,8 +113,13 @@ The mod changes are the same as [3.1.0](https://github.com/Sumire-Labs/CBMultipa
   using CleanroomDevEnv and kappa-maintainer's port. Include its particle effects.
 - Keep the existing package names, mod IDs and world save format. Scala mods that
   depend on Multipart need rebuilding against the Scala 3 API.
-- Use CCL CRE 3.3.10, ChickenASM 4.0.1 and HEI 4.35.0. Dependency versions are pinned.
+- Use CCL CRE 3.3.10, ChickenASM 4.0.1 and HEI 4.35.0. Pin dependency versions.
 - Add Sumire Labs to the author lists of all three mod containers.
+- Read TASTy class headers without resolving method bodies. This works in MCP
+  development and SRG releases, including dedicated servers.
+- Add build and integration-test workflows, GitHub Releases, and publishing to
+  Maven, Modrinth and CurseForge. Remote uploads are disabled by default in this
+  release; enable them after setting the destination and credentials.
 
 ### Fixed
 
@@ -117,10 +127,9 @@ The mod changes are the same as [3.1.0](https://github.com/Sumire-Labs/CBMultipa
 - Fix buttons staying pressed after conversion to multipart blocks.
 - Fix generated Java passthrough classes failing bytecode verification.
 
-### Development
-
-- Read only TASTy class headers, without resolving method bodies. This works in
-  MCP development and SRG releases, including dedicated servers.
-- Add build and integration-test workflows, GitHub Releases, and publishing to
-  Maven, Modrinth and CurseForge. Remote uploads are disabled by default; enable
-  them after setting the destination and credentials.
+[Unreleased]: https://github.com/Sumire-Labs/CBMultipart-Rescaled/compare/3.1.2...HEAD
+[3.1.2]: https://github.com/Sumire-Labs/CBMultipart-Rescaled/compare/3.1.1...3.1.2
+[3.1.1]: https://github.com/Sumire-Labs/CBMultipart-Rescaled/compare/3.1.0...3.1.1
+[3.1.0]: https://github.com/Sumire-Labs/CBMultipart-Rescaled/compare/3.0.1...3.1.0
+[3.0.1]: https://github.com/Sumire-Labs/CBMultipart-Rescaled/compare/3.0.0...3.0.1
+[3.0.0]: https://github.com/Sumire-Labs/CBMultipart-Rescaled/releases/tag/3.0.0
