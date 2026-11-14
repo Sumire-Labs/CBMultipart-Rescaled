@@ -9,6 +9,9 @@
 - Fix microblock description updates sending a material ID where the client
   expects shape data.
 - Return zero explosion resistance for an empty multipart tile.
+- Keep the current part registry when a server's part list is rejected. Publish
+  accepted names, factories and ID encoding together, and skip the redundant
+  part-list update in singleplayer.
 
 Missing-material packets now include the original name. Use the same updated
 build on the client and server.

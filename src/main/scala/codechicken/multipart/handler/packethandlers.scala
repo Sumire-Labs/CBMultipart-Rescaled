@@ -36,7 +36,8 @@ object MultipartCPH extends MultipartPH with IClientPacketHandler {
     def handlePacket(packet: PacketCustom, mc: Minecraft, netHandler: INetHandlerPlayClient): Unit = {
         try {
             packet.getType match {
-                case 1 => handlePartRegistration(packet, netHandler)
+                // The integrated server and local client share this registry.
+                case 1 => if (!mc.isSingleplayer) handlePartRegistration(packet, netHandler)
                 case 2 => handleCompressedTileDesc(packet, mc.world)
                 case 3 => handleCompressedTileData(packet, mc.world)
                 case 4 => MultipartParticleEffectsClient.handleLandingEffects(packet, mc.world)

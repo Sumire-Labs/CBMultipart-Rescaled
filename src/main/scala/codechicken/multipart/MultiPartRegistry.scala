@@ -27,10 +27,15 @@ import scala.collection.mutable.{ListBuffer, Map => MMap}
  */
 object MultiPartRegistry {
     private val nameToFactory = MMap[ResourceLocation, IDynamicPartFactory]()
-    private val nameToID = MMap[ResourceLocation, Int]()
-    private var idToFactory: Array[IDynamicPartFactory] = scala.compiletime.uninitialized
-    private var idToName: Array[ResourceLocation] = scala.compiletime.uninitialized
-    private val idWriter = new IDWriter
+    private case class PartMap(names: Array[ResourceLocation], factories: Array[IDynamicPartFactory],
+                               ids: Map[ResourceLocation, Int], writer: IDWriter)
+    @volatile private var partMap: PartMap = null
+
+    private def buildMap(names: Array[ResourceLocation], factories: Array[IDynamicPartFactory]): PartMap = {
+        val writer = new IDWriter
+        writer.setMax(names.length)
+        PartMap(names, factories, names.zipWithIndex.toMap, writer)
+    }
     private val converters = new util.HashSet[IPartConverter]()
     private val placementConverters = new util.HashSet[IPlacementConverter]()
 
@@ -110,25 +115,19 @@ object MultiPartRegistry {
 
     private[multipart] def beforeServerStart(): Unit = {
         val (a1, a2) = nameToFactory.toArray.sortBy(_._1).unzip
-        idToName = a1
-        idToFactory = a2
-        idWriter.setMax(idToName.length)
-        nameToID.clear()
-        for ((name, id) <- idToName.zipWithIndex)
-            nameToID.put(name, id)
+        partMap = buildMap(a1, a2)
     }
 
     private[multipart] def writeIDMap(packet: PacketCustom): Unit = {
-        packet.writeInt(idToName.length)
-        idToName.foreach(packet.writeResourceLocation)
+        val current = partMap
+        packet.writeInt(current.names.length)
+        current.names.foreach(packet.writeResourceLocation)
     }
 
     private[multipart] def readIDMap(packet: PacketCustom): Seq[ResourceLocation] = {
         val k = packet.readInt()
-        idWriter.setMax(k)
-        idToName = new Array(k)
-        idToFactory = new Array(k)
-        nameToID.clear()
+        val names = new Array[ResourceLocation](k)
+        val factories = new Array[IDynamicPartFactory](k)
         val missing = ListBuffer[ResourceLocation]()
         for (i <- 0 until k) {
             val s = packet.readResourceLocation()
@@ -136,11 +135,11 @@ object MultiPartRegistry {
             if (v.isEmpty) {
                 missing += s
             } else {
-                idToName(i) = s
-                idToFactory(i) = v.get
-                nameToID.put(s, i)
+                names(i) = s
+                factories(i) = v.get
             }
         }
+        if (missing.isEmpty) partMap = buildMap(names, factories)
         missing.toSeq
     }
 
@@ -159,15 +158,17 @@ object MultiPartRegistry {
      * Writes the id of part to data
      */
     def writePartID(data: MCDataOutput, part: TMultiPart): Unit = {
-        idWriter.write(data, nameToID(part.getType))
+        val current = partMap
+        current.writer.write(data, current.ids(part.getType))
     }
 
     /**
      * Uses instantiators to create a new part from the id read from data
      */
     def readPart(data: MCDataInput) = {
-        val id = idWriter.read(data)
-        val (name, factory) = (idToName(id), idToFactory(id))
+        val current = partMap
+        val id = current.writer.read(data)
+        val (name, factory) = (current.names(id), current.factories(id))
         factory.createPartClient(name, data)
     }
 
