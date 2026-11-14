@@ -15,15 +15,23 @@ final case class TastyInfo(name: String, isTrait: Boolean, parents: Seq[String])
 object TastyInfo {
     private val cache = new ConcurrentHashMap[String, TastyInfo]()
 
+    private def loaders: Seq[ClassLoader] = Seq(
+        Launch.classLoader,
+        Thread.currentThread().getContextClassLoader,
+        getClass.getClassLoader,
+        ASMMixinCompiler.cl
+    ).filter(_ != null).distinct
+
+    private def resourceNames(name: String): Iterator[String] =
+        Iterator.iterate(name.replace('.', '/')) { current =>
+            val separator = current.lastIndexOf('$')
+            if (separator > current.lastIndexOf('/')) current.substring(0, separator) else ""
+        }.takeWhile(_.nonEmpty).map(_ + ".tasty")
+
     def readIfPresent(className: String): Option[TastyInfo] = {
         val name = className.replace('/', '.')
-        val resourceName = name.replace('.', '/') + ".tasty"
-        val loaders = Seq(
-            Thread.currentThread().getContextClassLoader,
-            getClass.getClassLoader,
-            ASMMixinCompiler.cl
-        ).filter(_ != null).distinct
-        if (loaders.exists(_.getResource(resourceName) != null)) Some(read(name)) else None
+        val available = loaders
+        if (resourceNames(name).exists(resource => available.exists(_.getResource(resource) != null))) Some(read(name)) else None
     }
 
     def read(className: String): TastyInfo = {
@@ -54,9 +62,9 @@ object TastyInfo {
     }
 
     private def readUncached(name: String): TastyInfo = {
-        val resourceName = name.replace('.', '/') + ".tasty"
-        val stream = resourceStream(resourceName).getOrElse {
-            throw new IllegalArgumentException("Scala 3 TASTy resource not found for " + name + ": " + resourceName)
+        // Nested classes share the top-level owner's TASTy file.
+        val stream = resourceNames(name).flatMap(resourceStream).nextOption().getOrElse {
+            throw new IllegalArgumentException("Scala 3 TASTy resource not found for " + name)
         }
         try {
             val data = TastyReader.read(stream.readAllBytes(), name)
@@ -67,7 +75,7 @@ object TastyInfo {
     }
 
     private def resourceStream(resourceName: String): Option[InputStream] = {
-        Option(Launch.classLoader.getResourceAsStream(resourceName))
+        loaders.iterator.map(_.getResourceAsStream(resourceName)).find(_ != null)
     }
 
 }

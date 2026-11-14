@@ -35,7 +35,9 @@ object TastyReader {
         }
 
         private def join(prefix: String, leaf: String): String =
-            if (prefix.isEmpty || prefix == "<root>" || prefix == "<empty>") leaf else prefix + "." + leaf
+            if (prefix.isEmpty || prefix == "<root>" || prefix == "<empty>") leaf
+            else if (prefix.endsWith("$")) prefix + leaf
+            else prefix + "." + leaf
 
         private def symbolName(addr: Addr): String = {
             val r = subReader(addr, endAddr)

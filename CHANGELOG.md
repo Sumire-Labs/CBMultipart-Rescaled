@@ -6,6 +6,8 @@
 
 - Expose ordinary inventory slots to hoppers and sided item handlers while
   preserving restrictions on sided inventories.
+- Read Scala 3 traits nested in objects from their enclosing TASTy files and
+  resolve their parent traits by JVM name.
 - Send missing microblock materials' original names to clients so pick-block keeps
   the saved material name.
 - Fix microblock description updates sending a material ID where the client
