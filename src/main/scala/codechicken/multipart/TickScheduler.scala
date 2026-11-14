@@ -235,7 +235,9 @@ object TickScheduler extends WorldExtensionInstantiator {
      * Start random ticking for a part. Should be called from TMultiPart.onWorldJoin
      */
     def loadRandomTick(part: TRandomUpdateTickPart): Unit = {
-        getExtension(part.tile.getWorld).asInstanceOf[WorldTickScheduler].loadRandom(part)
+        if (!part.world.isRemote) {
+            getExtension(part.tile.getWorld).asInstanceOf[WorldTickScheduler].loadRandom(part)
+        }
     }
 
     /**

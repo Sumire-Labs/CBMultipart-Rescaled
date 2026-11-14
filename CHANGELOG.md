@@ -11,6 +11,8 @@
   block connections and limit Observer connections to its output face.
   ([upstream #149](https://github.com/TheCBProject/CBMultipart/pull/149),
   [#189](https://github.com/TheCBProject/CBMultipart/pull/189))
+- Keep client parts out of the server's random-tick scheduler.
+  ([upstream #149](https://github.com/TheCBProject/CBMultipart/pull/149))
 - Expose ordinary inventory slots to hoppers and sided item handlers while
   preserving restrictions on sided inventories.
 - Read Scala 3 traits nested in objects from their enclosing TASTy files and
