@@ -16,6 +16,9 @@
   127. Resume loaded ticks, skip stale indices and keep the saved scheduler clock.
 - Allow parts to be added or removed during tick callbacks without crashing the
   update loop. Newly added parts start ticking on the next tick.
+- Keep packet updates queued during a send for the next flush.
+- Read four-byte update masks without extending the sign bit into the upper
+  32 bits.
 
 Missing-material packets now include the original name. Use the same updated
 build on the client and server.

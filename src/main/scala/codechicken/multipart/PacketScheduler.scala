@@ -26,7 +26,10 @@ object PacketScheduler {
     }
 
     private[multipart] def sendScheduled(): Unit = {
-        map.foreach { e =>
+        // Updates queued by writeScheduled belong to the next flush.
+        val scheduled = map.toList
+        map.clear()
+        scheduled.foreach { e =>
             val (part, mask) = e
             if (part.tile != null) {
                 val ipart = part.asInstanceOf[IScheduledPacketPart]
@@ -41,7 +44,6 @@ object PacketScheduler {
                 ipart.writeScheduled(mask, w)
             }
         }
-        map.clear()
     }
 }
 
@@ -70,7 +72,7 @@ trait TScheduledPacketPart extends TMultiPart with IScheduledPacketPart {
         val mask: Long = maskWidth match {
             case 1 => packet.readUByte
             case 2 => packet.readUShort
-            case 4 => packet.readInt
+            case 4 => packet.readInt.toLong & 0xFFFFFFFFL
             case 8 => packet.readLong
         }
         readScheduled(mask, packet)
