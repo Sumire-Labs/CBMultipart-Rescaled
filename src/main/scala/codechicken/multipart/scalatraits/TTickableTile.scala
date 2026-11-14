@@ -62,17 +62,17 @@ trait TTickableTile extends TileMultipart with ITickable {
 
     override def loadFrom(that: TileMultipart): Unit = {
         super.loadFrom(that)
-        //Add the new tile to the ticking list.
+        // Let World defer registration if it is currently ticking tile entities.
         if (doesTick) {
-            getWorld.tickableTileEntities.add(this)
+            getWorld.addTileEntity(this)
         }
     }
 
     override def loadTo(that: TileMultipart): Unit = {
         super.loadTo(that)
-        //Remove the old tile from the ticking list.
+        // The old tile is invalid; queue removal without changing World's iterator.
         if (doesTick) {
-            getWorld.tickableTileEntities.remove(this)
+            getWorld.markTileEntityForRemoval(this)
         }
     }
 

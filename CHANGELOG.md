@@ -16,6 +16,8 @@
   127. Resume loaded ticks, skip stale indices and keep the saved scheduler clock.
 - Allow parts to be added or removed during tick callbacks without crashing the
   update loop. Newly added parts start ticking on the next tick.
+- Use World's deferred tile registration and removal when a multipart tile changes
+  class during a tick, avoiding changes to the list World is iterating.
 - Keep packet updates queued during a send for the next flush.
 - Read four-byte update masks without extending the sign bit into the upper
   32 bits.
