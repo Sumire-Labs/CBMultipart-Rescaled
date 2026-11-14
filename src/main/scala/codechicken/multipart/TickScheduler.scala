@@ -61,7 +61,10 @@ object TickScheduler extends WorldExtensionInstantiator {
 
         override def postTick(): Unit = {
             if (tickChunks.nonEmpty) {
-                tickChunks = tickChunks.filter(_.processTicks())
+                // Callbacks may load or unload chunks and change the active set.
+                tickChunks.toArray.foreach { chunk =>
+                    if (tickChunks.contains(chunk) && !chunk.processTicks()) tickChunks -= chunk
+                }
             }
 
             processing = false
