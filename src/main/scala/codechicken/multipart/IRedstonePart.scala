@@ -100,11 +100,6 @@ object RedstoneInteractions {
      * Hardcoded vanilla overrides for Block.canConnectRedstone (see @IRedstoneConnectorBlock)
      */
     val fullVanillaBlocks: Set[Block] = Set(
-        Blocks.REDSTONE_TORCH,
-        Blocks.UNLIT_REDSTONE_TORCH,
-        Blocks.LEVER,
-        Blocks.STONE_BUTTON,
-        Blocks.WOODEN_BUTTON,
         Blocks.REDSTONE_BLOCK)
 
     /**
@@ -208,21 +203,11 @@ object RedstoneInteractions {
             return 0x1F
         }
 
-        if (side == 0) //vanilla doesn't handle side 0
-        {
-            return if (power) 0x1F else 0
+        if (block == Blocks.REDSTONE_WIRE) {
+            return if (side == 1) 0 else if (power) 0x1F else 4
         }
-
-        /**
-         * so that these can be conducted to from face parts on the other side of the block.
-         * Due to vanilla's inadequecy with redstone/logic on walls
-         */
-        if (block == Blocks.REDSTONE_WIRE || block == Blocks.POWERED_COMPARATOR || block == Blocks.UNPOWERED_COMPARATOR) {
-            if (side != 0) {
-                return if (power) 0x1F else 4
-            }
-
-            return 0
+        if (block == Blocks.POWERED_COMPARATOR || block == Blocks.UNPOWERED_COMPARATOR) {
+            return if (side < 2) 0 else if (power) 0x1F else 4
         }
 
         if (block == Blocks.POWERED_REPEATER || block == Blocks.UNPOWERED_REPEATER) //stupid minecraft hardcodes
@@ -235,11 +220,31 @@ object RedstoneInteractions {
             return 0
         }
 
-        if (power || block.canConnectRedstone(state, world, pos, EnumFacing.VALUES(side))) //some blocks accept power without visualising connections
+        if (block == Blocks.REDSTONE_TORCH || block == Blocks.UNLIT_REDSTONE_TORCH) {
+            return faceConnectionMask(state.getValue(BlockTorch.FACING).getOpposite.ordinal, side, power)
+        }
+        if (block == Blocks.STONE_BUTTON || block == Blocks.WOODEN_BUTTON) {
+            return faceConnectionMask(state.getValue(BlockDirectional.FACING).getOpposite.ordinal, side, power)
+        }
+        if (block == Blocks.LEVER) {
+            return faceConnectionMask(state.getValue(BlockLever.FACING).getFacing.getOpposite.ordinal, side, power)
+        }
+        if (block == Blocks.OBSERVER) {
+            return if (side == (state.getValue(BlockDirectional.FACING).ordinal ^ 1)) 0x1F else 0
+        }
+
+        // Forge expects the direction from the wire to this block, opposite its queried face.
+        if (power || block.canConnectRedstone(state, world, pos, EnumFacing.VALUES(side ^ 1)))
         {
             return 0x1F
         }
 
         0
+    }
+
+    private def faceConnectionMask(attachedSide: Int, side: Int, power: Boolean): Int = {
+        if (power) 0x1F
+        else if ((side & 6) == (attachedSide & 6)) 0x10
+        else 1 << rotationTo(side & 6, attachedSide)
     }
 }
