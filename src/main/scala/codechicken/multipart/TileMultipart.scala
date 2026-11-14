@@ -386,7 +386,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
 
     def canPlaceTorchOnTop: Boolean = partList.exists(_.canPlaceTorchOnTop) || isSolid(1)
 
-    def getExplosionResistance(entity: Entity): Float = partList.view.map(_.getExplosionResistance(entity)).max
+    def getExplosionResistance(entity: Entity): Float = partList.iterator.map(_.getExplosionResistance(entity)).foldLeft(0f)(Math.max)
 
     def getLightValue: Int = partList.iterator.map(_.getLightValue).foldLeft(0)(Math.max)
 
