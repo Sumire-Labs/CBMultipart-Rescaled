@@ -337,9 +337,12 @@ object ASMMixinCompiler {
                 mv.visitVarInsn(ALOAD, 0)
                 mv.visitFieldInsn(GETFIELD, name, fv.name, fv.desc)
                 mv.visitInsn(ftype.getOpcode(IRETURN))
-                mv.visitMaxs(1, 1)
+                mv.visitMaxs(width(ftype), 1)
 
-                mv = cnode.visitMethod(ACC_PUBLIC, fv.name + "_$eq", "(" + f.desc + ")V", null, null)
+                val setter = getClassInfo(t.name).methods.find { method =>
+                    method.name.endsWith("$_setter_$" + fv.name + "_$eq") && method.desc == "(" + f.desc + ")V"
+                }.map(_.name).getOrElse(fv.name + "_$eq")
+                mv = cnode.visitMethod(ACC_PUBLIC, setter, "(" + f.desc + ")V", null, null)
                 mv.visitVarInsn(ALOAD, 0)
                 mv.visitVarInsn(ftype.getOpcode(ILOAD), 1)
                 mv.visitFieldInsn(PUTFIELD, name, fv.name, fv.desc)
@@ -651,7 +654,12 @@ object ASMMixinCompiler {
                 method.desc.startsWith("()")
         }.map(method => method.name -> method).toMap
         val setters = abstractMethods.filter(_.name.endsWith("_$eq"))
-            .map(method => method.name.stripSuffix("_$eq") -> method).toMap
+            .map { method =>
+                val base = method.name.stripSuffix("_$eq")
+                val marker = "$_setter_$"
+                val getter = if (base.contains(marker)) base.substring(base.indexOf(marker) + marker.length) else base
+                getter -> method
+            }.toMap
         val fields = getters.collect {
             case (name, getter) if setters.contains(name) =>
                 val fieldName = if (name.contains("$$")) name.substring(name.lastIndexOf("$$") + 2) else name

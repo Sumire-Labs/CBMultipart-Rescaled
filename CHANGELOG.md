@@ -8,6 +8,8 @@
   preserving restrictions on sided inventories.
 - Read Scala 3 traits nested in objects from their enclosing TASTy files and
   resolve their parent traits by JVM name.
+- Generate initialization setters for Scala 3 trait values and reserve enough
+  operand stack space for long and double field getters.
 - Send missing microblock materials' original names to clients so pick-block keeps
   the saved material name.
 - Fix microblock description updates sending a material ID where the client
