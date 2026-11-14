@@ -5,11 +5,11 @@ import java.io.{DataOutputStream, File, FileInputStream, FileOutputStream}
 import codechicken.lib.world.{ChunkExtension, WorldExtension, WorldExtensionInstantiator}
 import net.minecraft.nbt.{CompressedStreamTools, NBTTagCompound, NBTTagList}
 import net.minecraft.server.MinecraftServer
-import net.minecraft.util.math.ChunkPos
 import net.minecraft.world.World
 import net.minecraft.world.chunk.Chunk
 
 import scala.collection.mutable.{HashSet, ListBuffer}
+import scala.util.Using
 
 /**
  * Used for scheduling delayed callbacks to parts.
@@ -80,16 +80,12 @@ object TickScheduler extends WorldExtensionInstantiator {
         def saveFile: File = new File(saveDir, "multipart.dat")
 
         override def load(): Unit = {
-            try {
-                val in = new FileInputStream(saveFile)
-                loadTag(CompressedStreamTools.readCompressed(in))
-                in.close()
+            val tag = try {
+                Using.resource(new FileInputStream(saveFile))(CompressedStreamTools.readCompressed)
+            } catch {
+                case _: Exception => new NBTTagCompound()
             }
-            catch {
-                case e: Exception =>
-            }
-
-            loadTag(new NBTTagCompound)
+            loadTag(tag)
         }
 
         def loadTag(tag: NBTTagCompound): Unit = {
@@ -197,21 +193,25 @@ object TickScheduler extends WorldExtensionInstantiator {
         }
 
         override def loadData(data: NBTTagCompound): Unit = {
+            world.tickChunks -= this
             tickList.clear()
             if (!data.hasKey("multipartTicks")) {
                 return
             }
 
             val tagList = data.getTagList("multipartTicks", 10)
-            val cc = new ChunkPos(0, 0)
             for (i <- 0 until tagList.tagCount) {
                 val tag = tagList.getCompoundTagAt(i)
-                val pos = indexInChunk(cc, tag.getShort("pos"))
+                val pos = indexInChunk(coord, tag.getShort("pos"))
                 val tile = chunk.getTileEntityMap.get(pos)
-                if (tile.isInstanceOf[TileMultipart]) {
-                    tickList += new PartTickEntry(tile.asInstanceOf[TileMultipart].partList(tag.getByte("i")), tag.getLong("time"), false)
+                val partIndex = tag.getByte("i") & 0xFF
+                tile match {
+                    case multipart: TileMultipart if multipart.partList.isDefinedAt(partIndex) =>
+                        tickList += new PartTickEntry(multipart.partList(partIndex), tag.getLong("time"), false)
+                    case _ =>
                 }
             }
+            if (tickList.nonEmpty) world.tickChunks += this
         }
 
         override def unload(): Unit = {

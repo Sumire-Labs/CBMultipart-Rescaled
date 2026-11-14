@@ -12,6 +12,8 @@
 - Keep the current part registry when a server's part list is rejected. Publish
   accepted names, factories and ID encoding together, and skip the redundant
   part-list update in singleplayer.
+- Restore scheduled ticks in their actual chunks, including part indices above
+  127. Resume loaded ticks, skip stale indices and keep the saved scheduler clock.
 
 Missing-material packets now include the original name. Use the same updated
 build on the client and server.
