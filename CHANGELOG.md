@@ -15,6 +15,8 @@
 - Keep newly loaded chunk schedules when callbacks change the active chunk set.
 - Discard queued part updates when their world unloads while keeping updates for
   other worlds.
+- Cache lazy trait values after successful initialization and retry failed
+  initializers. Ignore enclosing TASTy files that do not define the requested class.
 - Send missing microblock materials' original names to clients so pick-block keeps
   the saved material name.
 - Fix microblock description updates sending a material ID where the client

@@ -9,11 +9,18 @@ import scala.collection.mutable.ListBuffer
 
 /** Reads class headers without resolving method bodies against Minecraft's namespace. */
 object TastyReader {
-    def read(bytes: Array[Byte], target: String): Array[String] = {
-        new TastyUnpickler(bytes).unpickle(new SectionUnpickler[Array[String]]("ASTs") {
-            override def unpickle(reader: ByteReader, names: NameTable): Array[String] = {
+    private[asm] final class MissingClassHeader(target: String)
+        extends IllegalArgumentException("No Scala 3 class header for " + target)
+
+    def read(bytes: Array[Byte], target: String): Array[String] = metadata(bytes, target)._1
+
+    private[asm] def readLazyGetters(bytes: Array[Byte], target: String): Set[String] = metadata(bytes, target)._2
+
+    private def metadata(bytes: Array[Byte], target: String): (Array[String], Set[String]) = {
+        new TastyUnpickler(bytes).unpickle(new SectionUnpickler[(Array[String], Set[String])]("ASTs") {
+            override def unpickle(reader: ByteReader, names: NameTable): (Array[String], Set[String]) = {
                 new Headers(reader, names).scan(reader.endAddr, "", false, target).getOrElse {
-                    throw new IllegalArgumentException("No Scala 3 class header for " + target)
+                    throw new MissingClassHeader(target)
                 }
             }
         }).getOrElse {
@@ -84,7 +91,25 @@ object TastyReader {
             }
         }
 
-        def scan(end: Addr, owner: String, nested: Boolean, target: String): Option[Array[String]] = {
+        private def lazyFields(start: Addr, end: Addr): Set[String] = {
+            val body = fork(start)
+            val cursor = body.reader
+            val result = Set.newBuilder[String]
+            while (cursor.currentAddr.index < end.index) {
+                if (cursor.nextByte == VALDEF) {
+                    cursor.readByte()
+                    val fieldEnd = cursor.readEnd()
+                    val fieldName = body.name()
+                    while (cursor.currentAddr.index < fieldEnd.index) {
+                        if (cursor.nextByte == LAZY) result += scala.reflect.NameTransformer.encode(fieldName)
+                        body.skip()
+                    }
+                } else body.skip()
+            }
+            result.result()
+        }
+
+        def scan(end: Addr, owner: String, nested: Boolean, target: String): Option[(Array[String], Set[String])] = {
             while (currentAddr.index < end.index) {
                 nextByte match {
                     case PACKAGE =>
@@ -114,7 +139,7 @@ object TastyReader {
                                 if (nextByte == TRAIT) isTrait = true
                                 skip()
                             }
-                            if (fullName == target) return Some((isTrait.toString +: parents.toSeq).toArray)
+                            if (fullName == target) return Some(((isTrait.toString +: parents.toSeq).toArray, lazyFields(body, templateEnd)))
                             val found = fork(body).scan(templateEnd, fullName, true, target)
                             if (found.nonEmpty) return found
                         }

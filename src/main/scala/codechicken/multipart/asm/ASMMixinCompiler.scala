@@ -18,7 +18,7 @@ import org.apache.logging.log4j.{LogManager, Logger}
 import org.objectweb.asm.Opcodes.*
 import org.objectweb.asm.Type.*
 import org.objectweb.asm.tree.*
-import org.objectweb.asm.{ClassReader, MethodVisitor, Type}
+import org.objectweb.asm.{ClassReader, Label, MethodVisitor, Type}
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.*
@@ -370,8 +370,39 @@ object ASMMixinCompiler {
         mixinInfos.reverse.foreach { t => //last trait gets first pick on methods
             t.methods.foreach { m =>
                 if (!methodSigs(m.name + m.desc)) {
-                    val mv = cnode.visitMethod(ACC_PUBLIC, m.name, m.desc, null, Array(m.exceptions.asScala.toSeq*)).asInstanceOf[MethodNode]
-                    writeStaticBridge(mv, m.name, t)
+                    val getterName = if (m.name.contains("$$")) m.name.substring(m.name.lastIndexOf("$$") + 2) else m.name
+                    val isLazy = (m.access & ACC_BRIDGE) == 0 && getArgumentTypes(m.desc).isEmpty &&
+                        getClassInfo(t.name).tastyInfo.exists(_.lazyGetters.contains(getterName))
+                    val mv = cnode.visitMethod(ACC_PUBLIC | (if (isLazy) ACC_SYNCHRONIZED else 0),
+                        m.name, m.desc, null, Array(m.exceptions.asScala.toSeq*)).asInstanceOf[MethodNode]
+                    if (isLazy) {
+                        val resultType = getReturnType(m.desc)
+                        val prefix = "$cbmultipart$lazy$" + t.name.replace('/', '$') + "$" + m.name
+                        val initialized = prefix + "$initialized"
+                        val value = prefix + "$value"
+                        cnode.visitField(ACC_PRIVATE, initialized, "Z", null, null)
+                        if (resultType != Type.VOID_TYPE) cnode.visitField(ACC_PRIVATE, value, resultType.getDescriptor, null, null)
+                        val ready = new Label()
+                        mv.visitVarInsn(ALOAD, 0)
+                        mv.visitFieldInsn(GETFIELD, cnode.name, initialized, "Z")
+                        mv.visitJumpInsn(IFNE, ready)
+                        if (resultType != Type.VOID_TYPE) mv.visitVarInsn(ALOAD, 0)
+                        mv.visitVarInsn(ALOAD, 0)
+                        mv.visitMethodInsn(INVOKESTATIC, t.implementationClass, t.implementationName(m.name),
+                            staticDesc(t.name, m.desc), t.implementationIsInterface)
+                        if (resultType != Type.VOID_TYPE) mv.visitFieldInsn(PUTFIELD, cnode.name, value, resultType.getDescriptor)
+                        mv.visitVarInsn(ALOAD, 0)
+                        mv.visitInsn(ICONST_1)
+                        mv.visitFieldInsn(PUTFIELD, cnode.name, initialized, "Z")
+                        mv.visitLabel(ready)
+                        mv.visitFrame(F_SAME, 0, null, 0, null)
+                        if (resultType != Type.VOID_TYPE) {
+                            mv.visitVarInsn(ALOAD, 0)
+                            mv.visitFieldInsn(GETFIELD, cnode.name, value, resultType.getDescriptor)
+                        }
+                        mv.visitInsn(resultType.getOpcode(IRETURN))
+                        mv.visitMaxs(Math.max(2, width(resultType) + 1), 1)
+                    } else writeStaticBridge(mv, m.name, t)
                     methodSigs += m.name + m.desc
                 }
             }

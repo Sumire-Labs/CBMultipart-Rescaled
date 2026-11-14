@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 /** The small part of Scala 3 TASTy metadata required by the mixin compiler. */
 final case class TastyInfo(name: String, isTrait: Boolean, parents: Seq[String]) {
+    private[asm] lazy val lazyGetters: Set[String] = TastyInfo.readLazyGetters(name)
     def traitParents: Seq[String] = parents.filterNot(TastyInfo.isConcreteClass)
 
     def classParent: Option[String] = parents.find(TastyInfo.isConcreteClass)
@@ -31,7 +32,13 @@ object TastyInfo {
     def readIfPresent(className: String): Option[TastyInfo] = {
         val name = className.replace('/', '.')
         val available = loaders
-        if (resourceNames(name).exists(resource => available.exists(_.getResource(resource) != null))) Some(read(name)) else None
+        if (resourceNames(name).exists(resource => available.exists(_.getResource(resource) != null))) {
+            try Some(read(name))
+            catch {
+                // Generated Java helpers can share a Scala owner's name without a TASTy definition.
+                case _: TastyReader.MissingClassHeader => None
+            }
+        } else None
     }
 
     def read(className: String): TastyInfo = {
@@ -62,13 +69,19 @@ object TastyInfo {
     }
 
     private def readUncached(name: String): TastyInfo = {
+        val data = TastyReader.read(resourceBytes(name), name)
+        TastyInfo(name, data.head.toBoolean, data.tail.toSeq)
+    }
+
+    private def readLazyGetters(name: String): Set[String] = TastyReader.readLazyGetters(resourceBytes(name), name)
+
+    private def resourceBytes(name: String): Array[Byte] = {
         // Nested classes share the top-level owner's TASTy file.
         val stream = resourceNames(name).flatMap(resourceStream).nextOption().getOrElse {
             throw new IllegalArgumentException("Scala 3 TASTy resource not found for " + name)
         }
         try {
-            val data = TastyReader.read(stream.readAllBytes(), name)
-            TastyInfo(name, data.head.toBoolean, data.tail.toSeq)
+            stream.readAllBytes()
         } finally {
             stream.close()
         }
