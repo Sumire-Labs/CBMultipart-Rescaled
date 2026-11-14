@@ -25,6 +25,13 @@
 Missing-material packets now include the original name. Use the same updated
 build on the client and server.
 
+### Development
+
+- Update the CleanroomDevEnv build setup: select runtime JARs for embedded
+  libraries, replace tokens in renamed classes and check class constants for
+  unresolved tokens.
+- Enable Spotless checks by default.
+
 ## 3.1.1 - 2026-11-13
 
 ### Added
