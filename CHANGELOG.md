@@ -10,6 +10,8 @@
   resolve their parent traits by JVM name.
 - Generate initialization setters for Scala 3 trait values and reserve enough
   operand stack space for long and double field getters.
+- Restore saved ticks using the original part indices when unavailable part types
+  are skipped during loading, so ticks do not move to another part.
 - Send missing microblock materials' original names to clients so pick-block keeps
   the saved material name.
 - Fix microblock description updates sending a material ID where the client

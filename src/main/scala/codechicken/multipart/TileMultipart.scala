@@ -35,6 +35,9 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
      */
     var partList = Seq[TMultiPart]()
 
+    // Original NBT indices are needed until the chunk's saved ticks are restored.
+    private[multipart] var loadedPartIndices: Map[Int, TMultiPart] = null
+
     /**
      * Implicit java conversion of part list
      */
@@ -54,6 +57,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
      */
     def copyFrom(that: TileMultipart): Unit = {
         partList = that.partList
+        loadedPartIndices = that.loadedPartIndices
         capParts = that.capParts
         resetCapCache()
     }
@@ -82,6 +86,7 @@ class TileMultipart extends TileEntity with IChunkLoadTile {
      */
     def clearParts(): Unit = {
         partList = Seq()
+        loadedPartIndices = null
         capParts = new JLinkedList[ICapabilityProvider]()
         resetCapCache()
     }
@@ -773,6 +778,7 @@ object TileMultipart {
     def createFromNBT(tag: NBTTagCompound): TileMultipart = {
         val partList = tag.getTagList("parts", 10)
         val parts = ListBuffer[TMultiPart]()
+        val originalIndices = Map.newBuilder[Int, TMultiPart]
 
         for (i <- 0 until partList.tagCount) {
             val partTag = partList.getCompoundTagAt(i)
@@ -781,6 +787,7 @@ object TileMultipart {
             if (part != null) {
                 part.load(partTag)
                 parts += part
+                originalIndices += i -> part
             }
         }
 
@@ -789,6 +796,7 @@ object TileMultipart {
         val tmb = MultipartGenerator.generateCompositeTile(null, parts, false)
         tmb.readFromNBT(tag)
         tmb.loadParts(parts)
+        tmb.loadedPartIndices = originalIndices.result()
         tmb
     }
 

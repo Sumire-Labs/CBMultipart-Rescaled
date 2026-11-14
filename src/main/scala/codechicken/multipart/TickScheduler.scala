@@ -9,6 +9,7 @@ import net.minecraft.world.World
 import net.minecraft.world.chunk.Chunk
 
 import scala.collection.mutable.{HashSet, ListBuffer}
+import scala.jdk.CollectionConverters._
 import scala.util.Using
 
 /**
@@ -195,10 +196,6 @@ object TickScheduler extends WorldExtensionInstantiator {
         override def loadData(data: NBTTagCompound): Unit = {
             world.tickChunks -= this
             tickList.clear()
-            if (!data.hasKey("multipartTicks")) {
-                return
-            }
-
             val tagList = data.getTagList("multipartTicks", 10)
             for (i <- 0 until tagList.tagCount) {
                 val tag = tagList.getCompoundTagAt(i)
@@ -206,10 +203,18 @@ object TickScheduler extends WorldExtensionInstantiator {
                 val tile = chunk.getTileEntityMap.get(pos)
                 val partIndex = tag.getByte("i") & 0xFF
                 tile match {
-                    case multipart: TileMultipart if multipart.partList.isDefinedAt(partIndex) =>
-                        tickList += new PartTickEntry(multipart.partList(partIndex), tag.getLong("time"), false)
+                    case multipart: TileMultipart =>
+                        val part = Option(multipart.loadedPartIndices)
+                            .fold(multipart.partList.lift(partIndex))(_.get(partIndex))
+                        part.filter(_.tile eq multipart).foreach { restored =>
+                            tickList += new PartTickEntry(restored, tag.getLong("time"), false)
+                        }
                     case _ =>
                 }
+            }
+            chunk.getTileEntityMap.values().asScala.foreach {
+                case multipart: TileMultipart => multipart.loadedPartIndices = null
+                case _ =>
             }
             if (tickList.nonEmpty) world.tickChunks += this
         }
