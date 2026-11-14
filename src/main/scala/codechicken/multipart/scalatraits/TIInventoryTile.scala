@@ -114,7 +114,7 @@ trait TIInventoryTile extends TileMultipart with ISidedInventory {
         for (inv <- invList.asScala) {
             inv match {
                 case is: ISidedInventory => buf ++= is.getSlotsForFace(side).map(_ + base)
-                case _ =>
+                case _ => buf ++= (0 until inv.getSizeInventory).map(_ + base)
             }
             base += inv.getSizeInventory
         }

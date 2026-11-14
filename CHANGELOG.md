@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- Expose ordinary inventory slots to hoppers and sided item handlers while
+  preserving restrictions on sided inventories.
 - Send missing microblock materials' original names to clients so pick-block keeps
   the saved material name.
 - Fix microblock description updates sending a material ID where the client
