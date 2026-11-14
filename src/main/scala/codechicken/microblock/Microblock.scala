@@ -87,18 +87,25 @@ abstract class Microblock(var material: Int = 0) extends TMultiPart with TCuboid
     }
 
     override def writeDesc(packet: MCDataOutput): Unit = {
-        writeMaterialID(packet, material) //read by IDynamicPartFactory
-        packet.writeByte(shape)
+        writeMaterialID(packet, material) // Read by IDynamicPartFactory.
+        writeShape(packet)
     }
 
     override def readDesc(packet: MCDataInput): Unit = {
-        //matrialID writtin in writeDesc is read by the factory, no need to read it here
+        // The factory has already read the material ID.
         shape = packet.readByte
+        missingMaterialName = if (getIMaterial == MissingMicroMaterial) Some(packet.readString()) else None
     }
 
-    def sendShapeUpdate(): Unit = {
-        getWriteStream.writeByte(shape)
+    private def writeShape(packet: MCDataOutput): Unit = {
+        packet.writeByte(shape)
+        if (getIMaterial == MissingMicroMaterial) packet.writeString(savedMaterialName)
     }
+
+    def sendShapeUpdate(): Unit = writeShape(getWriteStream)
+
+    // Existing parts already know their material ID; only the factory reads it.
+    override def sendDescUpdate(): Unit = if (tile != null) sendShapeUpdate()
 
     override def read(packet: MCDataInput): Unit = {
         super.read(packet)

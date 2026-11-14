@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- Send missing microblock materials' original names to clients so pick-block keeps
+  the saved material name.
+- Fix microblock description updates sending a material ID where the client
+  expects shape data.
+
+Missing-material packets now include the original name. Use the same updated
+build on the client and server.
+
 ## 3.1.1 - 2026-11-13
 
 ### Added
