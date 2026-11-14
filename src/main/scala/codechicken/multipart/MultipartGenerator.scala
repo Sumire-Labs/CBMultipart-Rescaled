@@ -70,28 +70,33 @@ object MultipartGenerator extends ScratchBitSet {
         val (tile, converted) =
             if (world.isRemote) (BlockMultipart.getTile(world, pos), false)
             else TileMultipart.getOrConvertTile2(world, pos)
-        val bitset = setTraits(part, world.isRemote)
-
         var ntile = tile
-        if (ntile != null) {
-            if (converted) {
-                //perform client conversion
-                ntile.partList(0).invalidateConvertedTile()
-                world.setBlockState(pos, MultipartProxy.block.getDefaultState, 0)
-                silentAddTile(world, pos, ntile)
-                PacketCustom.sendToChunk(new SPacketBlockChange(world, pos), world, pos.getX >> 4, pos.getZ >> 4)
-                ntile.partList(0).onConverted()
-                ntile.writeAddPart(ntile.partList(0))
+        if (ntile != null && converted) {
+            val convertedParts = ntile.partList
+            convertedParts.foreach(_.invalidateConvertedTile())
+            world.setBlockState(pos, MultipartProxy.block.getDefaultState, 0)
+            silentAddTile(world, pos, ntile)
+            PacketCustom.sendToChunk(new SPacketBlockChange(world, pos), world, pos.getX >> 4, pos.getZ >> 4)
+            // Describe the parts before callbacks can update, remove or replace them.
+            convertedParts.foreach(ntile.writeAddPart)
+            convertedParts.foreach { part =>
+                if (part.tile != null && !part.tile.isInvalid && (part.world eq world) && part.pos == pos) part.onConverted()
             }
+            ntile = BlockMultipart.getTile(world, pos)
+        }
 
-            val tileTraits = tileTraitMap(tile.getClass)
+        // Conversion callbacks can re-enter this generator and reuse its scratch bitset.
+        val bitset = setTraits(part, world.isRemote)
+        if (ntile != null) {
+            val tileTraits = tileTraitMap(ntile.getClass)
             bitset.andNot(tileTraits)
             if (!bitset.isEmpty) {
                 bitset.or(tileTraits)
+                val previous = ntile
                 ntile = MultipartMixinFactory.construct(bitset)
-                tile.setValid(false)
+                previous.setValid(false)
                 silentAddTile(world, pos, ntile)
-                ntile.from(tile)
+                ntile.from(previous)
             }
         }
         else {

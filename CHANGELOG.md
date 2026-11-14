@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- Keep converted parts and required tile traits when conversion callbacks remove
+  parts or replace the tile. Describe all converted parts before callbacks run.
+  ([upstream #112](https://github.com/TheCBProject/CBMultipart/issues/112))
 - Expose ordinary inventory slots to hoppers and sided item handlers while
   preserving restrictions on sided inventories.
 - Read Scala 3 traits nested in objects from their enclosing TASTy files and
