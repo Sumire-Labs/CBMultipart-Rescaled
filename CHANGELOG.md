@@ -13,6 +13,8 @@
 - Restore saved ticks using the original part indices when unavailable part types
   are skipped during loading, so ticks do not move to another part.
 - Keep newly loaded chunk schedules when callbacks change the active chunk set.
+- Discard queued part updates when their world unloads while keeping updates for
+  other worlds.
 - Send missing microblock materials' original names to clients so pick-block keeps
   the saved material name.
 - Fix microblock description updates sending a material ID where the client

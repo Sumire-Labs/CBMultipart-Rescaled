@@ -111,6 +111,7 @@ object MultipartSPH extends MultipartPH with IServerPacketHandler with IHandshak
 
     def onWorldUnload(world: World): Unit = {
         if (!world.isRemote) {
+            PacketScheduler.onWorldUnload(world)
             updateMap.remove(world)
             landingEffects.remove(world)
         }

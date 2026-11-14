@@ -1,6 +1,7 @@
 package codechicken.multipart
 
 import codechicken.lib.data.{MCDataInput, MCDataOutput}
+import net.minecraft.world.World
 
 import scala.collection.mutable
 import scala.collection.mutable.Map as MMap
@@ -13,6 +14,10 @@ import scala.collection.mutable.Map as MMap
  */
 object PacketScheduler {
     private val map = mutable.Map[TMultiPart, Long]()
+
+    private[multipart] def onWorldUnload(world: World): Unit = {
+        map.filterInPlace((part, _) => part.tile != null && (part.world ne world))
+    }
 
     /**
      * Add bits to the current update mask for part. (binary OR)
