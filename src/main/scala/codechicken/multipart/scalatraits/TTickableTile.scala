@@ -52,7 +52,8 @@ trait TTickableTile extends TileMultipart with ITickable {
     }
 
     override def update(): Unit = {
-        val it = tickingParts.iterator
+        // Callbacks can add or remove parts; new parts start on the next tick.
+        val it = tickingParts.asScala.toArray.iterator
         while (it.hasNext) {
             val p = it.next()
             if (p.tile eq this) p.update()

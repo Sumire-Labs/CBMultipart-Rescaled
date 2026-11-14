@@ -14,6 +14,8 @@
   part-list update in singleplayer.
 - Restore scheduled ticks in their actual chunks, including part indices above
   127. Resume loaded ticks, skip stale indices and keep the saved scheduler clock.
+- Allow parts to be added or removed during tick callbacks without crashing the
+  update loop. Newly added parts start ticking on the next tick.
 
 Missing-material packets now include the original name. Use the same updated
 build on the client and server.
