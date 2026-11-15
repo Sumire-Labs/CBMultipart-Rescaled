@@ -19,7 +19,7 @@ It lets multiple functional parts share a single block space. This includes micr
 
 - [Java 25 (OpenJDK)](https://github.com/openjdk/jdk25u)
 - [Cleanroom](https://github.com/CleanroomMC/Cleanroom) 0.7.14 or newer
-- [Scalar](https://github.com/CleanroomMC/Scalar) 3.9.0 or newer within the 3.9.x series
+- [Scalar](https://github.com/CleanroomMC/Scalar) 3.10.0 or newer within the 3.x series
 - [CodeChicken Lib CRE](https://github.com/Refitbench/CodeChickenLib) 3.3.10 or newer
 
 Optional shader integration: [Demonica](https://github.com/ndellagrotte/Demonica).
@@ -27,6 +27,8 @@ Optional shader integration: [Demonica](https://github.com/ndellagrotte/Demonica
 When installing from Modrinth, install Scalar separately from [CurseForge](https://www.curseforge.com/minecraft/mc-mods/scalar).
 
 ## For developers
+
+Build Scala extensions against this version with Scala 3.10.x.
 
 Available from [Sumire Labs Maven](https://artifact.sumirelabs.com/maven/releases):
 

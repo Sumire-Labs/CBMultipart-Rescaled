@@ -4,6 +4,15 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Require Scalar 3.10.0 or newer and build with Scala 3.10.0.
+
+### Fixed
+
+- Fix startup being blocked with Scalar 3.10.0. Update the bundled TASTy reader
+  to read traits compiled with Scala 3.10 as well as earlier Scala 3 versions.
+
 ## [3.1.2] - 2026-11-14
 
 ### Changed
