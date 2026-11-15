@@ -4,9 +4,14 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-11-15
+
 ### Changed
 
-- Require Scalar 3.10.0 or newer and build with Scala 3.10.0.
+- Require Scalar 3.10.0 or newer within the 3.x series. Scalar 3.9 is no longer
+  supported.
+- Build with Scala 3.10.0. Compile Scala extensions against this release with
+  Scala 3.10.x.
 
 ### Fixed
 
@@ -136,7 +141,8 @@ The mod changes are the same as [3.1.0](https://github.com/Sumire-Labs/CBMultipa
 - Fix buttons staying pressed after conversion to multipart blocks.
 - Fix generated Java passthrough classes failing bytecode verification.
 
-[Unreleased]: https://github.com/Sumire-Labs/CBMultipart-Rescaled/compare/3.1.2...HEAD
+[Unreleased]: https://github.com/Sumire-Labs/CBMultipart-Rescaled/compare/4.0.0...HEAD
+[4.0.0]: https://github.com/Sumire-Labs/CBMultipart-Rescaled/compare/3.1.2...4.0.0
 [3.1.2]: https://github.com/Sumire-Labs/CBMultipart-Rescaled/compare/3.1.1...3.1.2
 [3.1.1]: https://github.com/Sumire-Labs/CBMultipart-Rescaled/compare/3.1.0...3.1.1
 [3.1.0]: https://github.com/Sumire-Labs/CBMultipart-Rescaled/compare/3.0.1...3.1.0
