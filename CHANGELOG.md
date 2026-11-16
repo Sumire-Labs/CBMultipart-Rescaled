@@ -10,13 +10,12 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Require Scalar 3.10.0 or newer within the 3.x series. Scalar 3.9 is no longer
   supported.
-- Build with Scala 3.10.0. Compile Scala extensions against this release with
-  Scala 3.10.x.
+- Compile Scala extensions against this release with Scala 3.10.x.
 
 ### Fixed
 
-- Fix startup being blocked with Scalar 3.10.0. Update the bundled TASTy reader
-  to read traits compiled with Scala 3.10 as well as earlier Scala 3 versions.
+- Fix startup with Scalar 3.10.0. Read traits compiled with Scala 3.10 as well as
+  earlier Scala 3 versions.
 
 ## [3.1.2] - 2026-11-14
 
@@ -24,10 +23,7 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Include the original material name when synchronizing missing microblock materials.
   Update both the client and server to this version.
-- Update the CleanroomDevEnv build setup to select runtime JARs for embedded
-  libraries, replace tokens in renamed classes and check class constants for
-  unresolved tokens.
-- Enable Spotless checks by default.
+- Update DevEnv.
 
 ### Fixed
 
@@ -79,23 +75,12 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Add the CBMultipart Rescaled icon to all three mod entries.
 
-### Changed
-
-- Update the README with changes, requirements and links to dependencies and forks.
-- Enable Maven, CurseForge and Modrinth uploads for tagged releases. Include
-  dependency and incompatibility information on CurseForge and Modrinth.
-
 ## [3.1.0] - 2026-11-12
 
 ### Added
 
 - Add optional Demonica support so terrain shaders can identify each microblock's
   original block material.
-
-### Changed
-
-- Add server regression tests and client rendering checks with Celeritas and
-  Demonica. Logic ticks and rendering remain separate.
 
 ### Fixed
 
@@ -113,27 +98,22 @@ This changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Restore the previous shader material after each microblock draw, including
   nested draws and drawing errors.
 
-These fixes include changes from GTNH's ForgeMultipart fork.
-
 ## [3.0.1] - 2026-11-12
 
 The mod changes are the same as [3.1.0](https://github.com/Sumire-Labs/CBMultipart-Rescaled/releases/tag/3.1.0).
 
 ## [3.0.0] - 2026-11-12
 
+### Added
+
+- Add material-specific landing and running particles.
+
 ### Changed
 
-- Port Minecraft 1.12.2 Multipart to Cleanroom with Java 25 and Scala 3.9.0,
-  using CleanroomDevEnv and kappa-maintainer's port. Include its particle effects.
+- Port Minecraft 1.12.2 Multipart to Cleanroom with Java 25 and Scala 3.9.0.
 - Keep the existing package names, mod IDs and world save format. Scala mods that
   depend on Multipart need rebuilding against the Scala 3 API.
-- Use CCL CRE 3.3.10, ChickenASM 4.0.1 and HEI 4.35.0. Pin dependency versions.
-- Add Sumire Labs to the author lists of all three mod containers.
-- Read TASTy class headers without resolving method bodies. This works in MCP
-  development and SRG releases, including dedicated servers.
-- Add build and integration-test workflows, GitHub Releases, and publishing to
-  Maven, Modrinth and CurseForge. Remote uploads are disabled by default in this
-  release; enable them after setting the destination and credentials.
+- Use CCL CRE 3.3.10, ChickenASM 4.0.1 and HEI 4.35.0.
 
 ### Fixed
 
